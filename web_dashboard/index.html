@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NetShield-IoT | Ultra-Intuitive Network Optimizer</title>
+    <title>NetShield-IoT | Ultra-Intuitive Network Optimizer & Sentry</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
@@ -16,6 +16,7 @@
             --neon-green-glow: rgba(16, 185, 129, 0.3);
             --neon-amber: #f59e0b;
             --neon-red: #ef4444;
+            --neon-purple: #a855f7;
             --text: #f8fafc;
             --text-dim: #94a3b8;
         }
@@ -109,6 +110,7 @@
             justify-content: center;
             align-items: center;
             box-shadow: 0 0 25px var(--accent-glow);
+            transition: all 0.5s;
         }
 
         .score-num {
@@ -345,13 +347,11 @@
             color: #fff;
             margin-bottom: 6px;
         }
-
         .lane-status {
             font-size: 14px;
             font-weight: 700;
             margin-bottom: 8px;
         }
-
         .lane-desc {
             font-size: 12px;
             color: var(--text-dim);
@@ -388,7 +388,6 @@
             gap: 20px;
             margin-top: 18px;
         }
-
         @media (max-width: 768px) {
             .comparison-grid {
                 grid-template-columns: 1fr;
@@ -418,10 +417,7 @@
             display: flex;
             justify-content: space-between;
         }
-
-        .comp-metric {
-            margin-bottom: 14px;
-        }
+        .comp-metric { margin-bottom: 14px; }
         .comp-label {
             font-size: 12px;
             color: var(--text-dim);
@@ -441,33 +437,215 @@
             transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        /* 2-Column Section: Chart & Log */
+        /* ======================================================== */
+        /* 🔥 UPGRADED 2-COLUMN SECTION: LIVE RF RADAR & AI COPILOT */
+        /* ======================================================== */
         .bottom-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: 1.1fr 0.9fr;
             gap: 20px;
             margin-top: 24px;
         }
-        @media (max-width: 900px) {
+        @media (max-width: 1024px) {
             .bottom-grid {
                 grid-template-columns: 1fr;
             }
         }
 
-        .log-box {
-            background: rgba(0, 0, 0, 0.45);
-            border-radius: 10px;
-            padding: 14px;
-            max-height: 240px;
-            overflow-y: auto;
-            font-family: monospace;
-            font-size: 12px;
-            line-height: 1.7;
-            border: 1px solid rgba(255, 255, 255, 0.05);
+        /* Air Congestion Live Rolling Graph */
+        .radar-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 18px;
+            padding: 22px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
         }
-        .log-entry {
-            color: #10b981;
-            margin-bottom: 4px;
+
+        .chart-ctrls {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .chart-toggle-btn {
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--text-dim);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 5px 12px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .chart-toggle-btn.active {
+            background: rgba(0, 242, 254, 0.15);
+            color: var(--accent);
+            border-color: var(--accent);
+        }
+
+        .radar-meta-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 14px;
+            padding-top: 12px;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+            font-size: 12px;
+            color: var(--text-dim);
+        }
+
+        /* AI Sentry Copilot Console */
+        .copilot-card {
+            background: rgba(11, 15, 25, 0.9);
+            border: 1px solid rgba(0, 242, 254, 0.25);
+            border-radius: 18px;
+            padding: 22px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            position: relative;
+        }
+
+        .copilot-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .copilot-pulse {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--neon-green);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--neon-green);
+            box-shadow: 0 0 10px var(--neon-green);
+            animation: pulse 1.8s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(0.9); opacity: 0.8; }
+            50% { transform: scale(1.4); opacity: 1; }
+            100% { transform: scale(0.9); opacity: 0.8; }
+        }
+
+        /* Filter Tabs */
+        .copilot-filters {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 12px;
+            overflow-x: auto;
+            padding-bottom: 4px;
+        }
+
+        .filter-chip {
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-dim);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+        .filter-chip.active {
+            background: rgba(0, 242, 254, 0.2);
+            color: var(--accent);
+            border-color: var(--accent);
+        }
+
+        /* Stream Feed */
+        .copilot-feed {
+            flex: 1;
+            max-height: 270px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding-right: 6px;
+        }
+
+        .copilot-item {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-left: 3px solid var(--accent);
+            border-radius: 8px;
+            padding: 10px 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            transition: all 0.3s;
+            animation: fadeInItem 0.3s ease forwards;
+        }
+        @keyframes fadeInItem {
+            from { opacity: 0; transform: translateY(-4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .copilot-item.cat-ROAMER { border-left-color: var(--neon-green); }
+        .copilot-item.cat-SHIELD { border-left-color: var(--neon-amber); }
+        .copilot-item.cat-COPILOT { border-left-color: var(--neon-purple); }
+
+        .item-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .item-cat {
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: rgba(0, 242, 254, 0.15);
+            color: var(--accent);
+        }
+        .cat-ROAMER .item-cat { background: rgba(16, 185, 129, 0.15); color: var(--neon-green); }
+        .cat-SHIELD .item-cat { background: rgba(245, 158, 11, 0.15); color: var(--neon-amber); }
+        .cat-COPILOT .item-cat { background: rgba(168, 85, 247, 0.15); color: var(--neon-purple); }
+
+        .item-time {
+            font-size: 11px;
+            color: var(--text-dim);
+            font-family: monospace;
+        }
+
+        .item-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .item-msg {
+            font-size: 12px;
+            color: var(--text-dim);
+            line-height: 1.4;
+        }
+
+        .item-impact {
+            align-self: flex-start;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--neon-green);
+            margin-top: 2px;
         }
 
         /* Cyberpunk Fluid Toast Notifications */
@@ -562,7 +740,7 @@
         </div>
     </div>
 
-    <!-- 4 CORE METRIC CARDS (Kid-Friendly & Clear) -->
+    <!-- 4 CORE METRIC CARDS -->
     <div class="metrics-grid">
         <!-- Card 1: Live Speed -->
         <div class="card">
@@ -626,7 +804,6 @@
         </div>
 
         <div class="lanes-grid">
-            <!-- Lane 1 -->
             <div class="lane-card" id="card-lane1">
                 <span class="lane-badge" id="badge-lane1">Moderate</span>
                 <div class="lane-title">Lane 1 (Channel 1)</div>
@@ -634,7 +811,6 @@
                 <div class="lane-desc" id="desc-lane1">Medium congestion on this frequency.</div>
             </div>
 
-            <!-- Lane 2 -->
             <div class="lane-card" id="card-lane6">
                 <span class="lane-badge" id="badge-lane6">Jammed</span>
                 <div class="lane-title">Lane 6 (Channel 6)</div>
@@ -642,7 +818,6 @@
                 <div class="lane-desc" id="desc-lane6">Heavy interference from surrounding rooms.</div>
             </div>
 
-            <!-- Lane 3 -->
             <div class="lane-card best" id="card-lane11">
                 <span class="lane-badge fast" id="badge-lane11">Fast Lane</span>
                 <div class="lane-title">Lane 11 (Channel 11)</div>
@@ -666,7 +841,6 @@
         </div>
 
         <div class="comparison-grid">
-            <!-- Before Card -->
             <div class="comp-card before">
                 <div class="comp-title" style="color: var(--neon-red);">
                     <span>🐢 Unoptimized Baseline (Before)</span>
@@ -698,7 +872,6 @@
                 </div>
             </div>
 
-            <!-- After Card -->
             <div class="comp-card after">
                 <div class="comp-title" style="color: var(--neon-green);">
                     <span>🚀 NetShield Optimized (After)</span>
@@ -732,27 +905,61 @@
         </div>
     </div>
 
-    <!-- BOTTOM GRID: Spectrum Chart & Plain English Event Log -->
+    <!-- ======================================================== -->
+    <!-- 🔥 UPGRADED: LIVE RF WAVEFORM & AI SENTRY COPILOT        -->
+    <!-- ======================================================== -->
     <div class="bottom-grid">
-        <!-- Air Traffic Chart -->
-        <div class="card">
-            <div class="card-header-flex">
-                <span class="card-title">Air Congestion Graph</span>
-                <span class="card-icon">📊</span>
+        <!-- Left: Live Rolling RF Spectrum Waveform -->
+        <div class="radar-card">
+            <div>
+                <div class="card-header-flex">
+                    <div>
+                        <span class="card-title">Live Rolling RF Airwaves (ESP32 Radar)</span>
+                        <div style="font-size:12px; color:var(--text-dim); margin-top:2px;">Real-time continuous 2.4 GHz spectrum interference monitoring</div>
+                    </div>
+                    <div class="chart-ctrls">
+                        <button id="btn-chart-wave" class="chart-toggle-btn active" onclick="setChartMode('line')">📈 Live Wave</button>
+                        <button id="btn-chart-bar" class="chart-toggle-btn" onclick="setChartMode('bar')">📊 Bars</button>
+                    </div>
+                </div>
+
+                <div style="height: 230px; position: relative; margin-top: 10px;">
+                    <canvas id="spectrumChart"></canvas>
+                </div>
             </div>
-            <div style="height: 220px;">
-                <canvas id="spectrumChart"></canvas>
+
+            <div class="radar-meta-row">
+                <span>📡 Sniffer Mode: <b>Promiscuous Active</b></span>
+                <span id="radar-live-indicator">🔄 Updates every 1.5s</span>
+                <span>Active Frequency: <b>2.412 - 2.462 GHz</b></span>
             </div>
         </div>
 
-        <!-- Plain English Activity Feed -->
-        <div class="card">
-            <div class="card-header-flex">
-                <span class="card-title">Live Assistant Log</span>
-                <span class="card-icon">📋</span>
+        <!-- Right: AI Sentry Copilot Console -->
+        <div class="copilot-card">
+            <div class="copilot-header">
+                <div>
+                    <span class="card-title" style="color:#fff;">🤖 NetShield AI Copilot</span>
+                    <div style="font-size: 12px; color: var(--text-dim); margin-top: 2px;">Autonomous Network Reasoning & Sentinel Stream</div>
+                </div>
+                <div class="copilot-pulse">
+                    <div class="pulse-dot"></div>
+                    <span>Sentry Active</span>
+                </div>
             </div>
-            <div class="log-box" id="event-log">
-                <div class="log-entry">[System] Starting NetShield-IoT monitor...</div>
+
+            <!-- Filter Chips -->
+            <div class="copilot-filters">
+                <span class="filter-chip active" onclick="filterLogs('ALL', this)">All Feeds</span>
+                <span class="filter-chip" onclick="filterLogs('RADAR', this)">📡 Radar</span>
+                <span class="filter-chip" onclick="filterLogs('ROAMER', this)">⚡ Roamer</span>
+                <span class="filter-chip" onclick="filterLogs('SHIELD', this)">🛡️ Shield</span>
+                <span class="filter-chip" onclick="filterLogs('COPILOT', this)">💡 Advice</span>
+            </div>
+
+            <!-- Real-time Event Feed -->
+            <div class="copilot-feed" id="copilot-feed">
+                <!-- Injected via JavaScript -->
             </div>
         </div>
     </div>
@@ -782,22 +989,53 @@
             }, 3500);
         }
 
-        // Setup Chart
+        // Live Rolling Spectrum Chart Setup
+        let currentChartMode = 'line';
         const ctx = document.getElementById('spectrumChart').getContext('2d');
-        const spectrumChart = new Chart(ctx, {
-            type: 'bar',
+        
+        let spectrumChart = new Chart(ctx, {
+            type: 'line',
             data: {
-                labels: ['Lane 1 (Ch 1)', 'Lane 2 (Ch 6)', 'Lane 3 (Ch 11)'],
-                datasets: [{
-                    label: 'Routers Competing on Frequency',
-                    data: [0, 0, 0],
-                    backgroundColor: ['#10b981', '#f59e0b', '#ef4444'],
-                    borderRadius: 8
-                }]
+                labels: ['-18s', '-15s', '-12s', '-9s', '-6s', '-3s', 'Now'],
+                datasets: [
+                    {
+                        label: 'Lane 11 (Cleanest Lane)',
+                        data: [0, 0, 0, 0, 0, 0, 0],
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        borderWidth: 2,
+                        pointRadius: 3,
+                        pointBackgroundColor: '#10b981'
+                    },
+                    {
+                        label: 'Lane 1 (Moderate Lane)',
+                        data: [2, 2, 2, 2, 2, 2, 2],
+                        borderColor: '#f59e0b',
+                        backgroundColor: 'transparent',
+                        tension: 0.4,
+                        borderWidth: 2,
+                        pointRadius: 2,
+                        pointBackgroundColor: '#f59e0b'
+                    },
+                    {
+                        label: 'Lane 6 (Jammed Lane)',
+                        data: [4, 4, 3, 4, 4, 3, 3],
+                        borderColor: '#ef4444',
+                        backgroundColor: 'rgba(239, 68, 68, 0.08)',
+                        fill: true,
+                        tension: 0.4,
+                        borderWidth: 2,
+                        pointRadius: 2,
+                        pointBackgroundColor: '#ef4444'
+                    }
+                ]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                animation: { duration: 600 },
                 scales: {
                     y: {
                         beginAtZero: true,
@@ -805,17 +1043,130 @@
                         grid: { color: 'rgba(255, 255, 255, 0.05)' }
                     },
                     x: {
-                        ticks: { color: '#f8fafc' },
+                        ticks: { color: '#94a3b8' },
                         grid: { display: false }
                     }
                 },
                 plugins: {
-                    legend: { labels: { color: '#f8fafc' } }
+                    legend: { labels: { color: '#f8fafc', font: { size: 11 } } }
                 }
             }
         });
 
-        // Polling function
+        function setChartMode(mode) {
+            currentChartMode = mode;
+            document.getElementById('btn-chart-wave').className = 'chart-toggle-btn ' + (mode === 'line' ? 'active' : '');
+            document.getElementById('btn-chart-bar').className = 'chart-toggle-btn ' + (mode === 'bar' ? 'active' : '');
+            
+            spectrumChart.destroy();
+            if (mode === 'line') {
+                spectrumChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: [],
+                        datasets: [
+                            {
+                                label: 'Lane 11 (Cleanest)',
+                                data: [],
+                                borderColor: '#10b981',
+                                backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                                fill: true,
+                                tension: 0.4,
+                                borderWidth: 2.5
+                            },
+                            {
+                                label: 'Lane 1 (Moderate)',
+                                data: [],
+                                borderColor: '#f59e0b',
+                                tension: 0.4,
+                                borderWidth: 2
+                            },
+                            {
+                                label: 'Lane 6 (Jammed)',
+                                data: [],
+                                borderColor: '#ef4444',
+                                backgroundColor: 'rgba(239, 68, 68, 0.08)',
+                                fill: true,
+                                tension: 0.4,
+                                borderWidth: 2
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: { duration: 500 },
+                        scales: {
+                            y: { beginAtZero: true, ticks: { color: '#94a3b8', stepSize: 1 }, grid: { color: 'rgba(255, 255, 255, 0.05)' } },
+                            x: { ticks: { color: '#94a3b8' }, grid: { display: false } }
+                        },
+                        plugins: { legend: { labels: { color: '#f8fafc', font: { size: 11 } } } }
+                    }
+                });
+            } else {
+                spectrumChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Lane 1 (Ch 1)', 'Lane 6 (Ch 6)', 'Lane 11 (Ch 11)'],
+                        datasets: [{
+                            label: 'Active Routers Competing',
+                            data: [0, 0, 0],
+                            backgroundColor: ['#f59e0b', '#ef4444', '#10b981'],
+                            borderRadius: 8
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: { beginAtZero: true, ticks: { color: '#94a3b8', stepSize: 1 }, grid: { color: 'rgba(255, 255, 255, 0.05)' } },
+                            x: { ticks: { color: '#f8fafc' }, grid: { display: false } }
+                        },
+                        plugins: { legend: { labels: { color: '#f8fafc' } } }
+                    }
+                });
+            }
+            fetchStats();
+        }
+
+        // Active Copilot Filter
+        let activeCopilotFilter = 'ALL';
+        function filterLogs(category, el) {
+            activeCopilotFilter = category;
+            document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+            el.classList.add('active');
+            renderCopilotFeed(lastFetchedEvents);
+        }
+
+        let lastFetchedEvents = [];
+
+        function renderCopilotFeed(events) {
+            if (!events || events.length === 0) return;
+            const container = document.getElementById('copilot-feed');
+            
+            const filtered = activeCopilotFilter === 'ALL' 
+                ? events 
+                : events.filter(e => e.category === activeCopilotFilter);
+
+            if (filtered.length === 0) {
+                container.innerHTML = `<div style="text-align:center; color:var(--text-dim); padding:20px; font-size:12px;">No events in this category yet.</div>`;
+                return;
+            }
+
+            container.innerHTML = filtered.map(item => `
+                <div class="copilot-item cat-${item.category}">
+                    <div class="item-top">
+                        <span class="item-cat">${item.category}</span>
+                        <span class="item-time">${item.time}</span>
+                    </div>
+                    <div class="item-title">${item.title}</div>
+                    <div class="item-msg">${item.message}</div>
+                    <div class="item-impact">${item.impact}</div>
+                </div>
+            `).join('');
+        }
+
+        // Main Polling Loop
         async function fetchStats() {
             try {
                 const res = await fetch('/api/stats');
@@ -827,7 +1178,6 @@
                 document.getElementById('health-title').textContent = data.score_status;
                 document.getElementById('health-sub').textContent = data.simple_summary;
 
-                // Color score circle
                 const sc = document.querySelector('.score-circle');
                 if (data.health_score >= 80) {
                     sc.style.borderColor = 'var(--neon-green)';
@@ -860,12 +1210,11 @@
                 latEl.style.color = data.latency_ms < 50 ? 'var(--neon-green)' : (data.latency_ms < 100 ? 'var(--neon-amber)' : 'var(--neon-red)');
                 document.getElementById('sub-latency').textContent = data.latency_ms < 50 ? '🟢 Instant Response (Zero Freezes)' : (data.latency_ms < 120 ? '⚡ Good Response' : '⚠️ Heavy Delay');
 
-                // 5. Current Connection & Signal Bars
+                // 5. Signal & Bars
                 document.getElementById('val-cur-ssid').textContent = data.current_ssid;
                 document.getElementById('val-cur-sig').textContent = data.current_signal + '%';
                 document.getElementById('val-cur-chan').textContent = 'Ch ' + data.current_channel;
 
-                // Update signal bars
                 const bars = data.signal_bars || 3;
                 document.querySelectorAll('#sig-bars-container .signal-bar').forEach((bar, idx) => {
                     if (idx < bars) bar.classList.add('active');
@@ -876,28 +1225,24 @@
                 document.getElementById('val-blocked').textContent = data.blocked_queries;
                 document.getElementById('sub-saved').textContent = (data.bandwidth_saved_kb).toFixed(1) + ' KB wasted data saved';
 
-                // 7. Highway Analogy Updates
+                // 7. Highway Analogy
                 if (data.highway) {
                     const h = data.highway;
                     document.getElementById('pill-best-lane').textContent = `🏎️ Lane ${h.best_lane}: Cleanest Lane!`;
-
-                    // Lane 1
                     document.getElementById('status-lane1').textContent = `${h.lane1.status} (${h.lane1.count} Routers)`;
                     document.getElementById('desc-lane1').textContent = h.lane1.desc;
                     updateLaneCardStyle('card-lane1', 'badge-lane1', h.lane1.count, data.current_channel === 1, h.best_lane === 1);
 
-                    // Lane 6
                     document.getElementById('status-lane6').textContent = `${h.lane6.status} (${h.lane6.count} Routers)`;
                     document.getElementById('desc-lane6').textContent = h.lane6.desc;
                     updateLaneCardStyle('card-lane6', 'badge-lane6', h.lane6.count, data.current_channel === 6, h.best_lane === 6);
 
-                    // Lane 11
                     document.getElementById('status-lane11').textContent = `${h.lane11.status} (${h.lane11.count} Routers)`;
                     document.getElementById('desc-lane11').textContent = h.lane11.desc;
                     updateLaneCardStyle('card-lane11', 'badge-lane11', h.lane11.count, data.current_channel === 11, h.best_lane === 11);
                 }
 
-                // 8. Auto-Roam Button
+                // 8. Auto-Pilot Mode
                 const autoBtn = document.getElementById('btn-auto-roam');
                 if (data.auto_roam_enabled) {
                     autoBtn.className = 'btn btn-outline active';
@@ -934,14 +1279,25 @@
                     }
                 }
 
-                // 10. Chart
-                spectrumChart.data.datasets[0].data = [data.ch1, data.ch6, data.ch11];
-                spectrumChart.update();
+                // 10. Upgraded Live Spectrum Chart Update
+                if (currentChartMode === 'line') {
+                    if (data.spectrum_history && data.spectrum_history.length > 0) {
+                        const hist = data.spectrum_history;
+                        spectrumChart.data.labels = hist.map(h => h.time);
+                        spectrumChart.data.datasets[0].data = hist.map(h => h.ch11);
+                        spectrumChart.data.datasets[1].data = hist.map(h => h.ch1);
+                        spectrumChart.data.datasets[2].data = hist.map(h => h.ch6);
+                        spectrumChart.update();
+                    }
+                } else {
+                    spectrumChart.data.datasets[0].data = [data.ch1, data.ch6, data.ch11];
+                    spectrumChart.update();
+                }
 
-                // 11. Activity Log
-                if (data.activity_log && data.activity_log.length > 0) {
-                    const logContainer = document.getElementById('event-log');
-                    logContainer.innerHTML = data.activity_log.map(item => `<div class="log-entry">${item}</div>`).join('');
+                // 11. Upgraded AI Copilot Sentry Feed
+                if (data.assistant_events) {
+                    lastFetchedEvents = data.assistant_events;
+                    renderCopilotFeed(lastFetchedEvents);
                 }
 
             } catch (err) {
