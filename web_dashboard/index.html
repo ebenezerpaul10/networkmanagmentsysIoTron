@@ -480,6 +480,29 @@
             margin-right: 4px;
         }
 
+        .chart-ctrls {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .chart-toggle-btn {
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--text-dim);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 5px 12px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .chart-toggle-btn.active {
+            background: rgba(0, 242, 254, 0.15);
+            color: var(--accent);
+            border-color: var(--accent);
+        }
+
         .radar-meta-row {
             display: flex;
             justify-content: space-between;
@@ -863,33 +886,40 @@
     <!-- 🔥 KID-SIMPLE LEFT-TO-RIGHT GRAPH & ROBO-SENTRY ASSISTANT -->
     <!-- ======================================================== -->
     <div class="bottom-grid">
-        <!-- Left: Intuitive Left-to-Right Air Traffic Wave -->
+        <!-- Left: Live Multi-Channel RF Airwaves (ESP32 Radar) -->
         <div class="radar-card">
             <div>
                 <div class="card-header-flex">
                     <div>
-                        <span class="card-title">🌊 Room Air Traffic Wave (Moving Left ➔ Right)</span>
+                        <span class="card-title">📡 Live Wi-Fi Airwaves (ESP32 Radar)</span>
                         <div class="zone-legend">
-                            <span style="color: var(--neon-green);"><span class="zone-dot" style="background:var(--neon-green);"></span>Low (Clean Air 🏎️)</span>
-                            <span style="color: var(--neon-amber);"><span class="zone-dot" style="background:var(--neon-amber);"></span>Medium (Normal 🚗)</span>
-                            <span style="color: var(--neon-red);"><span class="zone-dot" style="background:var(--neon-red);"></span>High (Traffic Jam 🛑)</span>
+                            <span style="color: var(--neon-green);"><span class="zone-dot" style="background:var(--neon-green);"></span>Lane 11 (Cleanest 🏎️)</span>
+                            <span style="color: var(--neon-amber);"><span class="zone-dot" style="background:var(--neon-amber);"></span>Lane 1 (Moderate 🚗)</span>
+                            <span style="color: var(--neon-red);"><span class="zone-dot" style="background:var(--neon-red);"></span>Lane 6 (Jammed 🛑)</span>
                         </div>
                     </div>
-                    <div style="text-align: right;">
-                        <span class="pill green" id="pill-current-zone">🏎️ Clean Air (20%)</span>
+                    <div class="chart-ctrls">
+                        <button id="btn-chart-wave" class="chart-toggle-btn active" onclick="setChartMode('line')">📈 Live Waves</button>
+                        <button id="btn-chart-bar" class="chart-toggle-btn" onclick="setChartMode('bar')">📊 Lane Bars</button>
                     </div>
                 </div>
 
-                <!-- Left to Right Flowing Waveform Canvas -->
+                <!-- Multi-Channel Wave Canvas (NO CONFUSING NUMBER LINE) -->
                 <div style="height: 220px; position: relative; margin-top: 12px;">
-                    <canvas id="trafficWaveChart"></canvas>
+                    <canvas id="spectrumChart"></canvas>
+                </div>
+
+                <!-- Clean, Friendly Timeline Bar (NO NUMBERS) -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px; font-size: 11px; color: var(--text-dim); padding: 0 4px;">
+                    <span>◀ Past Airwaves (Left)</span>
+                    <span style="color: var(--accent); font-weight: 700;">● Live Real-Time Airwaves (Right) ▶</span>
                 </div>
             </div>
 
             <div class="radar-meta-row">
-                <span>Timeline: <b>Past (Left) ➔ Now (Right)</b></span>
-                <span>📡 Sensor: <b>ESP32 Active</b></span>
-                <span>Simple Rule: <b>Lower the wave, faster your net!</b></span>
+                <span>Timeline: <b>Past ➔ Live Now</b></span>
+                <span>📡 Sensor: <b>ESP32 Active Sniffer</b></span>
+                <span>Simple Rule: <b>Green line at bottom = Cleanest Wi-Fi!</b></span>
             </div>
         </div>
 
@@ -948,71 +978,202 @@
         }
 
         // ========================================================
-        // 🌊 LEFT-TO-RIGHT AIR TRAFFIC WAVE CHART
+        // 📡 LIVE MULTI-CHANNEL RF SPECTRUM CHART (ESP32 RADAR)
         // ========================================================
-        const ctx = document.getElementById('trafficWaveChart').getContext('2d');
+        let currentChartMode = 'line';
+        const ctx = document.getElementById('spectrumChart').getContext('2d');
         
-        // Horizontal Gradient: Green (bottom) -> Amber (middle) -> Red (top)
-        const gradient = ctx.createLinearGradient(0, 200, 0, 0);
-        gradient.addColorStop(0, 'rgba(16, 185, 129, 0.25)'); // Clean
-        gradient.addColorStop(0.5, 'rgba(245, 158, 11, 0.25)'); // Medium
-        gradient.addColorStop(1, 'rgba(239, 68, 68, 0.35)'); // Jammed
+        // Rolling labels with NO confusing numbers! (All empty strings, ticks hidden)
+        const emptyLabels = new Array(20).fill('');
 
-        const labelsLeftToRight = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', 'Now ➔'];
-
-        const trafficChart = new Chart(ctx, {
+        let spectrumChart = new Chart(ctx, {
             type: 'line',
             data: {
-                labels: labelsLeftToRight,
-                datasets: [{
-                    label: 'Room Air Traffic (0-100%)',
-                    data: [18, 20, 22, 19, 21, 24, 20, 18, 22, 25, 20, 19, 21, 23, 20, 22, 19, 21, 20, 20],
-                    borderColor: '#00f2fe',
-                    backgroundColor: gradient,
-                    fill: true,
-                    tension: 0.45,
-                    borderWidth: 3,
-                    pointRadius: (ctx) => (ctx.dataIndex === 19 ? 6 : 0), // Highlight NOW point
-                    pointBackgroundColor: '#00f2fe',
-                    pointHoverRadius: 6
-                }]
+                labels: emptyLabels,
+                datasets: [
+                    {
+                        label: 'Lane 11 (Cleanest 🏎️)',
+                        data: new Array(20).fill(0),
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.12)',
+                        fill: true,
+                        tension: 0.4,
+                        borderWidth: 2.5,
+                        pointRadius: (ctx) => (ctx.dataIndex === 19 ? 5 : 0),
+                        pointBackgroundColor: '#10b981'
+                    },
+                    {
+                        label: 'Lane 1 (Moderate 🚗)',
+                        data: new Array(20).fill(2),
+                        borderColor: '#f59e0b',
+                        backgroundColor: 'transparent',
+                        tension: 0.4,
+                        borderWidth: 2,
+                        pointRadius: (ctx) => (ctx.dataIndex === 19 ? 5 : 0),
+                        pointBackgroundColor: '#f59e0b'
+                    },
+                    {
+                        label: 'Lane 6 (Jammed 🛑)',
+                        data: new Array(20).fill(3),
+                        borderColor: '#ef4444',
+                        backgroundColor: 'rgba(239, 68, 68, 0.08)',
+                        fill: true,
+                        tension: 0.4,
+                        borderWidth: 2,
+                        pointRadius: (ctx) => (ctx.dataIndex === 19 ? 5 : 0),
+                        pointBackgroundColor: '#ef4444'
+                    }
+                ]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                animation: false, // Prevents jumpy redraws!
+                animation: { duration: 600, easing: 'easeInOutQuad' },
                 scales: {
                     y: {
-                        min: 0,
-                        max: 100,
+                        beginAtZero: true,
+                        suggestedMax: 4,
                         ticks: {
                             color: '#94a3b8',
-                            stepSize: 25,
-                            callback: (val) => val === 0 ? '0% (Empty)' : (val === 50 ? '50% (Busy)' : (val === 100 ? '100% (Jammed)' : val + '%'))
+                            stepSize: 1,
+                            callback: (val) => val === 0 ? '0 (Clean)' : val + (val === 1 ? ' Router' : ' Routers')
                         },
-                        grid: {
-                            color: (context) => {
-                                if (context.tick.value === 35) return 'rgba(16, 185, 129, 0.2)';
-                                if (context.tick.value === 70) return 'rgba(239, 68, 68, 0.2)';
-                                return 'rgba(255, 255, 255, 0.05)';
-                            }
-                        }
+                        grid: { color: 'rgba(255, 255, 255, 0.05)' }
                     },
                     x: {
-                        ticks: { color: '#94a3b8', maxRotation: 0 },
+                        ticks: { display: false }, // Completely removes confusing numbers!
                         grid: { display: false }
                     }
                 },
                 plugins: {
-                    legend: { display: false },
+                    legend: {
+                        display: true,
+                        position: 'top',
+                        labels: {
+                            color: '#f8fafc',
+                            boxWidth: 10,
+                            font: { size: 11, weight: 'bold' }
+                        }
+                    },
                     tooltip: {
                         callbacks: {
-                            label: (ctx) => `Traffic Level: ${ctx.parsed.y}%`
+                            label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y} Active Routers`
                         }
                     }
                 }
             }
         });
+
+        function setChartMode(mode) {
+            currentChartMode = mode;
+            document.getElementById('btn-chart-wave').className = 'chart-toggle-btn ' + (mode === 'line' ? 'active' : '');
+            document.getElementById('btn-chart-bar').className = 'chart-toggle-btn ' + (mode === 'bar' ? 'active' : '');
+            
+            spectrumChart.destroy();
+            if (mode === 'line') {
+                spectrumChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: emptyLabels,
+                        datasets: [
+                            {
+                                label: 'Lane 11 (Cleanest 🏎️)',
+                                data: new Array(20).fill(0),
+                                borderColor: '#10b981',
+                                backgroundColor: 'rgba(16, 185, 129, 0.12)',
+                                fill: true,
+                                tension: 0.4,
+                                borderWidth: 2.5,
+                                pointRadius: (ctx) => (ctx.dataIndex === 19 ? 5 : 0),
+                                pointBackgroundColor: '#10b981'
+                            },
+                            {
+                                label: 'Lane 1 (Moderate 🚗)',
+                                data: new Array(20).fill(0),
+                                borderColor: '#f59e0b',
+                                tension: 0.4,
+                                borderWidth: 2,
+                                pointRadius: (ctx) => (ctx.dataIndex === 19 ? 5 : 0),
+                                pointBackgroundColor: '#f59e0b'
+                            },
+                            {
+                                label: 'Lane 6 (Jammed 🛑)',
+                                data: new Array(20).fill(0),
+                                borderColor: '#ef4444',
+                                backgroundColor: 'rgba(239, 68, 68, 0.08)',
+                                fill: true,
+                                tension: 0.4,
+                                borderWidth: 2,
+                                pointRadius: (ctx) => (ctx.dataIndex === 19 ? 5 : 0),
+                                pointBackgroundColor: '#ef4444'
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: { duration: 600, easing: 'easeInOutQuad' },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                suggestedMax: 4,
+                                ticks: {
+                                    color: '#94a3b8',
+                                    stepSize: 1,
+                                    callback: (val) => val === 0 ? '0 (Clean)' : val + (val === 1 ? ' Router' : ' Routers')
+                                },
+                                grid: { color: 'rgba(255, 255, 255, 0.05)' }
+                            },
+                            x: {
+                                ticks: { display: false }, // Completely removes confusing numbers!
+                                grid: { display: false }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'top',
+                                labels: { color: '#f8fafc', boxWidth: 10, font: { size: 11, weight: 'bold' } }
+                            }
+                        }
+                    }
+                });
+            } else {
+                spectrumChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Lane 1 (Ch 1)', 'Lane 6 (Ch 6)', 'Lane 11 (Ch 11)'],
+                        datasets: [{
+                            label: 'Active Routers Competing',
+                            data: [0, 0, 0],
+                            backgroundColor: ['#f59e0b', '#ef4444', '#10b981'],
+                            borderRadius: 8
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: { duration: 500 },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                suggestedMax: 4,
+                                ticks: { color: '#94a3b8', stepSize: 1 },
+                                grid: { color: 'rgba(255, 255, 255, 0.05)' }
+                            },
+                            x: {
+                                ticks: { color: '#f8fafc', font: { weight: 'bold' } },
+                                grid: { display: false }
+                            }
+                        },
+                        plugins: {
+                            legend: { display: false }
+                        }
+                    }
+                });
+            }
+            fetchStats();
+        }
 
         // ========================================================
         // 🤖 ZERO-FLICKER ROBO-SENTRY ASSISTANT FEED
@@ -1177,27 +1338,18 @@
                     }
                 }
 
-                // 10. Update Left-to-Right Air Traffic Wave
-                if (data.traffic_wave && data.traffic_wave.length > 0) {
-                    trafficChart.data.datasets[0].data = data.traffic_wave;
-                    const latestVal = data.traffic_wave[data.traffic_wave.length - 1];
-                    
-                    // Update pill status
-                    const pillZone = document.getElementById('pill-current-zone');
-                    if (latestVal <= 35) {
-                        pillZone.className = 'pill green';
-                        pillZone.textContent = `🏎️ Clean Air (${latestVal}%)`;
-                    } else if (latestVal <= 70) {
-                        pillZone.className = 'pill cyan';
-                        pillZone.textContent = `🚗 Normal Traffic (${latestVal}%)`;
-                    } else {
-                        pillZone.className = 'pill' ;
-                        pillZone.style.background = 'rgba(239, 68, 68, 0.2)';
-                        pillZone.style.color = 'var(--neon-red)';
-                        pillZone.style.border = '1px solid var(--neon-red)';
-                        pillZone.textContent = `🛑 Traffic Jam (${latestVal}%)`;
+                // 10. Update Live Multi-Channel Spectrum (Moving Left to Right)
+                if (currentChartMode === 'line') {
+                    if (data.spectrum_history && data.spectrum_history.length > 0) {
+                        const hist = data.spectrum_history;
+                        spectrumChart.data.datasets[0].data = hist.map(h => h.ch11 !== undefined ? h.ch11 : 0);
+                        spectrumChart.data.datasets[1].data = hist.map(h => h.ch1 !== undefined ? h.ch1 : 0);
+                        spectrumChart.data.datasets[2].data = hist.map(h => h.ch6 !== undefined ? h.ch6 : 0);
+                        spectrumChart.update();
                     }
-                    trafficChart.update('none'); // Update without canvas flicker!
+                } else {
+                    spectrumChart.data.datasets[0].data = [data.ch1 || 0, data.ch6 || 0, data.ch11 || 0];
+                    spectrumChart.update();
                 }
 
                 // 11. Update Friendly Robo-Sentry Speech Bubble (Smooth text change)

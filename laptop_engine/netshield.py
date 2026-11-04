@@ -78,6 +78,8 @@ stats = {
     "congestion_score": 20,
     "total_aps": 0,
     "ch1": 0, "ch6": 0, "ch11": 0,
+    # Rolling Spectrum History for All 3 Wi-Fi Channels (Lane 1, Lane 6, Lane 11)
+    "spectrum_history": [{"ch1": 2, "ch6": 2, "ch11": 0} for _ in range(20)],
     
     # Left-to-Right Single Air Traffic Wave Buffer (20 points, 0-100%)
     "traffic_wave": [15, 20, 18, 22, 25, 20, 18, 22, 20, 24, 19, 21, 25, 20, 22, 18, 20, 22, 21, 20],
@@ -453,8 +455,18 @@ def esp_listener_worker():
                             stats["ch6"] = c6
                             stats["ch11"] = c11
                             
+                            # Rolling Spectrum History for All 3 Wi-Fi Lanes (Moving Left to Right)
+                            now_str = time.strftime("%H:%M:%S")
+                            stats["spectrum_history"].append({
+                                "time": now_str,
+                                "ch1": c1,
+                                "ch6": c6,
+                                "ch11": c11
+                            })
+                            if len(stats["spectrum_history"]) > 20:
+                                stats["spectrum_history"].pop(0)
+
                             # Intuitive single air traffic level (0-100%)
-                            # Moves Left to Right smoothly
                             traffic_val = min(100, max(10, int((stats['total_aps'] * 6) + (stats['congestion_score'] * 0.4))))
                             stats["traffic_wave"].append(traffic_val)
                             if len(stats["traffic_wave"]) > 20:
