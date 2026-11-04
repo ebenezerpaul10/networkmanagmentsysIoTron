@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-NetShield-IoT: Laptop Companion Engine & Optimization Daemon (v3.5 Sentry)
+NetShield-IoT: Laptop Companion Engine & Optimization Daemon (v4.1 Calm & Friendly)
 Features:
-  1. Live Rolling Spectrum Time-Series Buffer (for dynamic RF wave graph)
-  2. Intelligent AI Sentry Copilot (Categorized real-time log events)
-  3. Master 0-100 Internet Quality Score & Highway Analogy
-  4. Real-time Download Speed Meter
+  1. Friendly "Robo-Sentry" Assistant (Calm, no spam, speech-bubble style)
+  2. Single Clear Air Traffic Waveform (0-100% Left-to-Right progression)
+  3. Stable, Non-flickering event stream with unique IDs
+  4. Real-time Download Speed Meter & Master 0-100 Score
   5. Strict SSID matching & Automatic Rollback Safety
   6. Local DNS Shield & ESP32 Serial Radar
 """
@@ -16,7 +16,6 @@ import glob
 import time
 import json
 import socket
-import random
 import threading
 import subprocess
 from http.server import HTTPServer, BaseHTTPRequestHandler
@@ -42,6 +41,8 @@ BLOCKED_DOMAINS = [
     "adroll.com", "criteo.com", "popads.net", "tracking", "telemetry"
 ]
 
+event_counter = 0
+
 stats = {
     # System & Hardware
     "esp_connected": False,
@@ -49,9 +50,13 @@ stats = {
     "auto_roam_enabled": False,
     
     # 0-100 Master Internet Score
-    "health_score": 85,
+    "health_score": 88,
     "score_status": "Ultra Smooth 🚀",
-    "simple_summary": "Your connection is flying! ESP32 radar is guarding your room.",
+    "simple_summary": "Your network is flying! ESP32 radar is guarding your room.",
+    
+    # Friendly Robo-Sentry Speech (Calm, easy for a kid)
+    "robo_speech": "🌟 Everything is awesome! Your Wi-Fi is clear and ready for YouTube, games & movies.",
+    "robo_mood": "happy",
     
     # Active Connection on Laptop (Real-Time)
     "current_ssid": "Scanning...",
@@ -70,12 +75,13 @@ stats = {
     "best_bssid": "N/A",
     "best_rssi": -100,
     "recommended_channel": 1,
-    "congestion_score": 0,
+    "congestion_score": 20,
     "total_aps": 0,
     "ch1": 0, "ch6": 0, "ch11": 0,
     
-    # Rolling Spectrum History (Last 20 Samples for Dynamic Waveform Graph)
-    "spectrum_history": [],
+    # Left-to-Right Single Air Traffic Wave Buffer (20 points, 0-100%)
+    "traffic_wave": [15, 20, 18, 22, 25, 20, 18, 22, 20, 24, 19, 21, 25, 20, 22, 18, 20, 22, 21, 20],
+    "traffic_zone": "Green (Clean Air 🏎️)",
     
     # Highway Traffic Analogy
     "highway": {
@@ -115,14 +121,17 @@ stats = {
         "channel_cleared": True
     },
     
-    # Intelligent AI Sentry Copilot Feed (Structured Events)
+    # Stable, Non-flickering Assistant Events
     "assistant_events": []
 }
 
 def log_assistant(category, title, message, impact="Info"):
-    """Appends a structured log event to the AI Copilot stream."""
+    """Appends a calm structured log event with unique ID."""
+    global event_counter
+    event_counter += 1
     timestamp = time.strftime("%H:%M:%S")
     entry = {
+        "id": event_counter,
         "time": timestamp,
         "category": category, # RADAR, ROAMER, SHIELD, COPILOT
         "title": title,
@@ -130,9 +139,9 @@ def log_assistant(category, title, message, impact="Info"):
         "impact": impact
     }
     stats["assistant_events"].insert(0, entry)
-    if len(stats["assistant_events"]) > 35:
+    if len(stats["assistant_events"]) > 20:
         stats["assistant_events"].pop()
-    print(f"[COPILOT {category}] [{timestamp}] {title}: {message} ({impact})")
+    print(f"[ROBO-SENTRY] #{event_counter} [{category}] {title}: {message}")
 
 def auto_detect_esp():
     ports = glob.glob("/dev/ttyUSB*") + glob.glob("/dev/ttyACM*")
@@ -188,13 +197,13 @@ def find_best_candidate_for_ssid(target_ssid):
     return None, 0, 0
 
 def calculate_master_score():
-    """Computes a logical 0-100 Master Internet Score and simple summary."""
+    """Computes a logical 0-100 Master Internet Score and simple robot speech."""
     score = 0
     lat = stats["latency_ms"]
     if lat > 0:
-        if lat <= 30: score += 40
-        elif lat <= 60: score += 35
-        elif lat <= 100: score += 25
+        if lat <= 35: score += 40
+        elif lat <= 65: score += 35
+        elif lat <= 110: score += 25
         elif lat <= 200: score += 15
         else: score += 5
     
@@ -213,15 +222,25 @@ def calculate_master_score():
         
     stats["health_score"] = min(100, max(10, score))
     
+    # Friendly Kid-Simple Speech & Mood
     if stats["health_score"] >= 80:
         stats["score_status"] = "Ultra Smooth 🚀"
-        stats["simple_summary"] = "Your network is blazing fast! Zero lag for gaming, video calls & 4K video."
+        stats["simple_summary"] = "Your network is flying! ESP32 radar is guarding your room."
+        stats["robo_speech"] = "🌟 Everything is awesome! Your Wi-Fi is super clear and ready for YouTube, 4K videos & gaming."
+        stats["robo_mood"] = "happy"
+        stats["traffic_zone"] = "Green (Clean Air 🏎️)"
     elif stats["health_score"] >= 60:
         stats["score_status"] = "Good & Steady ⚡"
-        stats["simple_summary"] = "Good connection! Normal browsing & YouTube streaming are smooth."
+        stats["simple_summary"] = "Internet is smooth and stable with light nearby traffic."
+        stats["robo_speech"] = "⚡ Good connection! A couple of nearby rooms are online, but your connection is steady."
+        stats["robo_mood"] = "alert"
+        stats["traffic_zone"] = "Yellow (Busy Air 🚗)"
     else:
-        stats["score_status"] = "Traffic Jam 🚗"
-        stats["simple_summary"] = "Your router is congested! Click 'Boost Internet' to hop to an empty channel."
+        stats["score_status"] = "Traffic Jam 🛑"
+        stats["simple_summary"] = "Channel is crowded with high latency. Boost recommended."
+        stats["robo_speech"] = "🛑 Traffic jam detected on this Wi-Fi channel! Click 'Boost Internet' to hop over to an empty channel."
+        stats["robo_mood"] = "warning"
+        stats["traffic_zone"] = "Red (Traffic Jam 🛑)"
 
 def update_comparison_metrics(before_state, after_state):
     stats["before_metrics"] = before_state
@@ -252,7 +271,7 @@ def switch_to_bssid(ssid, target_bssid):
         "timestamp": time.strftime("%H:%M:%S")
     }
     
-    log_assistant("ROAMER", "Initiating AP Handoff", f"Transitioning from {stats['current_bssid']} to cleaner candidate {target_bssid}...", "Switching")
+    log_assistant("ROAMER", "Jumping to Cleaner Wi-Fi", f"Connecting to faster router [{target_bssid}] on network '{ssid}'...", "Switching")
     try:
         subprocess.check_call(
             ["nmcli", "connection", "modify", ssid, "802-11-wireless.bssid", target_bssid],
@@ -285,11 +304,11 @@ def switch_to_bssid(ssid, target_bssid):
         }
         
         update_comparison_metrics(before_snapshot, after_snapshot)
-        log_assistant("ROAMER", "Handoff Complete", f"Locked to AP {target_bssid} on Channel {new_chan}. Latency dropped to {new_lat} ms!", f"+{new_sig - stats['current_signal']}% Signal")
+        log_assistant("ROAMER", "Connected to Faster Router!", f"Locked to router on Channel {new_chan}. Latency is {new_lat} ms!", f"+{new_sig - stats['current_signal']}% Signal")
         return True, f"Successfully jumped to faster router ({target_bssid})!"
         
     except Exception as e:
-        log_assistant("ROAMER", "Safety Rollback Activated", f"AP lock failed: {e}. Reverting to open profile...", "Protected")
+        log_assistant("ROAMER", "Safety Guard Triggered", "Could not lock router. Reverting to automatic profile...", "Protected")
         try:
             subprocess.call(
                 ["nmcli", "connection", "modify", ssid, "802-11-wireless.bssid", ""],
@@ -299,7 +318,7 @@ def switch_to_bssid(ssid, target_bssid):
                 ["nmcli", "connection", "up", ssid],
                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
             )
-            log_assistant("ROAMER", "Connection Intact", "Rollback complete: Wi-Fi connection safely preserved with zero downtime.", "Active")
+            log_assistant("ROAMER", "Safe & Connected", "Wi-Fi is safe and protected with zero disconnects.", "Stable")
         except Exception:
             pass
         return False, f"Could not lock to {target_bssid}. Connection safely restored."
@@ -332,10 +351,10 @@ def download_speed_worker():
             
             if mbps >= 1.0:
                 stats["download_speed_str"] = f"{mbps:.2f} Mbps"
-                stats["speed_verdict"] = "High Throughput ⚡"
+                stats["speed_verdict"] = "Fast Streaming ⚡"
             elif kbps >= 50:
                 stats["download_speed_str"] = f"{kbps:.1f} KB/s"
-                stats["speed_verdict"] = "Active Traffic"
+                stats["speed_verdict"] = "Active Browsing"
             else:
                 stats["download_speed_str"] = f"{kbps:.1f} KB/s"
                 stats["speed_verdict"] = "Idle / Light Data"
@@ -372,7 +391,7 @@ def active_connection_poller():
             
             if stats["auto_roam_enabled"] and bssid != "None" and cand_bssid != bssid:
                 if cand_sig > (sig + 15):
-                    log_assistant("ROAMER", "Auto-Pilot Triggered", f"Detected candidate {cand_bssid} offering +{cand_sig - sig}% stronger signal!", "Auto-Roam")
+                    log_assistant("ROAMER", "Auto-Pilot Jump", f"Found a cleaner router with +{cand_sig - sig}% stronger signal!", "Auto-Roam")
                     switch_to_bssid(ssid, cand_bssid)
         
         calculate_master_score()
@@ -403,7 +422,7 @@ def latency_worker():
         time.sleep(3.0)
 
 def esp_listener_worker():
-    """Reads live RF spectrum analytics from ESP32 and maintains live rolling history."""
+    """Reads live RF spectrum analytics from ESP32."""
     global stats
     while True:
         port = auto_detect_esp()
@@ -417,7 +436,7 @@ def esp_listener_worker():
             stats["esp_port"] = port
             ser = serial.Serial(port, DEFAULT_BAUD, timeout=4)
             stats["esp_connected"] = True
-            log_assistant("RADAR", "Hardware Initialized", f"ESP32 RF Radar operational on {port}. Sniffing 2.4 GHz air traffic...", "Online")
+            log_assistant("RADAR", "ESP32 Radar Connected", f"Hardware antenna is sniffing room airwaves on {port}.", "Online")
             
             while True:
                 line = ser.readline().decode("utf-8", errors="ignore").strip()
@@ -434,17 +453,12 @@ def esp_listener_worker():
                             stats["ch6"] = c6
                             stats["ch11"] = c11
                             
-                            # Push into Rolling Spectrum History (Rolling 20 samples)
-                            now_str = time.strftime("%H:%M:%S")
-                            stats["spectrum_history"].append({
-                                "time": now_str,
-                                "ch1": c1,
-                                "ch6": c6,
-                                "ch11": c11,
-                                "total": stats["total_aps"]
-                            })
-                            if len(stats["spectrum_history"]) > 20:
-                                stats["spectrum_history"].pop(0)
+                            # Intuitive single air traffic level (0-100%)
+                            # Moves Left to Right smoothly
+                            traffic_val = min(100, max(10, int((stats['total_aps'] * 6) + (stats['congestion_score'] * 0.4))))
+                            stats["traffic_wave"].append(traffic_val)
+                            if len(stats["traffic_wave"]) > 20:
+                                stats["traffic_wave"].pop(0)
                             
                             # Highway Analogy
                             def get_lane_info(count):
@@ -471,31 +485,31 @@ def esp_listener_worker():
             time.sleep(2)
 
 def intelligent_copilot_worker():
-    """Periodically generates logical, contextual AI assistant observations."""
+    """Generates calm, kid-friendly assistant observations with 45s cooldown."""
     global stats
     time.sleep(4)
-    log_assistant("COPILOT", "Copilot Online", "NetShield AI Copilot ready. Continuously evaluating RF spectrum and latency health.", "Active")
+    log_assistant("COPILOT", "Robo-Sentry Ready", "Hello! I am your Wi-Fi guard. I will keep your internet fast and clean.", "Ready")
     
-    cycle = 0
+    last_lane_advised = None
+    last_advice_time = 0
+    
     while True:
-        time.sleep(5.0)
-        cycle += 1
+        time.sleep(12.0)
+        now = time.time()
         
-        # 1. Evaluate spectrum air traffic
         best_lane = stats["highway"]["best_lane"]
         cur_chan = stats["current_channel"]
+        
+        # Only advise if lane changed and cooldown passed
         if cur_chan != 0 and cur_chan != best_lane and cur_chan <= 13:
-            log_assistant("COPILOT", "Optimization Advisory", f"You are on Channel {cur_chan}. ESP32 detected Channel {best_lane} has less RF interference.", "Tip")
-        elif cycle % 4 == 0:
+            if best_lane != last_lane_advised or (now - last_advice_time > 60):
+                last_lane_advised = best_lane
+                last_advice_time = now
+                log_assistant("COPILOT", "Faster Lane Available", f"Channel {best_lane} is completely empty! Click 'Boost' to jump over.", "Tip")
+        elif (now - last_advice_time > 90):
+            last_advice_time = now
             total = stats["total_aps"]
-            log_assistant("RADAR", "Spectrum Sweep", f"ESP32 scanned {total} active routers in range. Lane {best_lane} is optimal.", "Stable")
-            
-        # 2. Evaluate latency & jitter
-        lat = stats["latency_ms"]
-        if lat > 0 and lat < 45 and cycle % 3 == 0:
-            log_assistant("COPILOT", "Latency Analysis", f"Handshake RTT is {lat} ms — zero packet jitter detected. Perfect for voice calls and gaming.", "Optimal")
-        elif lat >= 150:
-            log_assistant("COPILOT", "Congestion Warning", f"Latency reached {lat} ms. Surrounding network traffic is spiking.", "Alert")
+            log_assistant("RADAR", "Room Air Checked", f"I checked the air: found {total} routers. Your signal is steady.", "All Good")
 
 def dns_shield_worker():
     """Local DNS Shield Server."""
@@ -520,7 +534,7 @@ def dns_shield_worker():
                 reply = request.reply()
                 reply.add_answer(RR(qname, QTYPE.A, rdata=A("0.0.0.0"), ttl=60))
                 sock.sendto(reply.pack(), addr)
-                log_assistant("SHIELD", "Telemetry Filtered", f"Sinkholed tracking request from '{qname}'.", "Saved 2.5 KB")
+                log_assistant("SHIELD", "Blocked Tracking Ad", f"Stopped a sneaky background ad tracker ({qname}).", "Saved Data")
             else:
                 up_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
                 up_sock.settimeout(1.5)
@@ -564,7 +578,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
         elif self.path == "/api/toggle_auto_roam":
             stats["auto_roam_enabled"] = not stats["auto_roam_enabled"]
             status_str = "ENABLED" if stats["auto_roam_enabled"] else "DISABLED"
-            log_assistant("ROAMER", "Auto-Pilot Toggled", f"Autonomous roaming policy set to {status_str}.", status_str)
+            log_assistant("ROAMER", "Auto-Pilot Mode", f"Auto-Pilot set to {status_str}.", status_str)
             self.send_response(200)
             self.send_header("Content-type", "application/json")
             self.end_headers()
@@ -578,7 +592,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 "status": "User Baseline Snapshot",
                 "timestamp": time.strftime("%H:%M:%S")
             }
-            log_assistant("COPILOT", "Baseline Locked", "Captured current network parameters as BEFORE reference for benchmarking.", "Saved")
+            log_assistant("COPILOT", "Baseline Saved 📌", "Saved current network speed as BEFORE reference.", "Saved")
             self.send_response(200)
             self.send_header("Content-type", "application/json")
             self.end_headers()
@@ -595,7 +609,7 @@ def web_server_worker():
     server.serve_forever()
 
 if __name__ == "__main__":
-    log_assistant("COPILOT", "Engine Boot", "NetShield-IoT Engine v3.5 Sentry initialized.", "Ready")
+    log_assistant("COPILOT", "System Started", "NetShield-IoT v4.1 is ready to protect your connection.", "Ready")
     
     threading.Thread(target=dns_shield_worker, daemon=True).start()
     threading.Thread(target=download_speed_worker, daemon=True).start()
@@ -604,7 +618,7 @@ if __name__ == "__main__":
     threading.Thread(target=esp_listener_worker, daemon=True).start()
     threading.Thread(target=intelligent_copilot_worker, daemon=True).start()
     threading.Thread(target=web_server_worker, daemon=True).start()
-    log_assistant("COPILOT", "Dashboard Active", f"Cyberpunk Web Console listening on port {WEB_PORT}.", "Online")
+    log_assistant("COPILOT", "Dashboard Ready", f"Open http://localhost:{WEB_PORT} to view your dashboard.", "Online")
     
     while True:
         time.sleep(1)

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NetShield-IoT | Ultra-Intuitive Network Optimizer & Sentry</title>
+    <title>NetShield-IoT | Ultra-Simple Network Optimizer</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
@@ -438,7 +438,7 @@
         }
 
         /* ======================================================== */
-        /* 🔥 UPGRADED 2-COLUMN SECTION: LIVE RF RADAR & AI COPILOT */
+        /* 🔥 BOTTOM SECTION: LEFT-TO-RIGHT GRAPH & ROBO-SENTRY     */
         /* ======================================================== */
         .bottom-grid {
             display: grid;
@@ -452,39 +452,32 @@
             }
         }
 
-        /* Air Congestion Live Rolling Graph */
+        /* Left: Intuitive Left-to-Right Traffic Wave */
         .radar-card {
             background: var(--card-bg);
             border: 1px solid var(--card-border);
             border-radius: 18px;
-            padding: 22px;
+            padding: 24px;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
             display: flex;
             flex-direction: column;
             justify-content: space-between;
         }
 
-        .chart-ctrls {
+        .zone-legend {
             display: flex;
-            gap: 8px;
-            align-items: center;
-        }
-
-        .chart-toggle-btn {
-            background: rgba(255, 255, 255, 0.06);
-            color: var(--text-dim);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 5px 12px;
-            border-radius: 8px;
-            font-size: 11px;
+            gap: 14px;
+            font-size: 12px;
             font-weight: 700;
-            cursor: pointer;
-            transition: all 0.2s;
+            margin-top: 4px;
+            flex-wrap: wrap;
         }
-        .chart-toggle-btn.active {
-            background: rgba(0, 242, 254, 0.15);
-            color: var(--accent);
-            border-color: var(--accent);
+        .zone-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 4px;
         }
 
         .radar-meta-row {
@@ -498,154 +491,115 @@
             color: var(--text-dim);
         }
 
-        /* AI Sentry Copilot Console */
-        .copilot-card {
+        /* Right: Friendly Robo-Sentry Speech & Feed */
+        .robo-card {
             background: rgba(11, 15, 25, 0.9);
             border: 1px solid rgba(0, 242, 254, 0.25);
             border-radius: 18px;
-            padding: 22px;
+            padding: 24px;
             display: flex;
             flex-direction: column;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-            position: relative;
         }
 
-        .copilot-header {
+        /* Animated Robot Speech Bubble */
+        .robo-bubble-box {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 14px;
-            flex-wrap: wrap;
-            gap: 10px;
+            gap: 14px;
+            align-items: flex-start;
+            margin-bottom: 18px;
+            background: linear-gradient(135deg, rgba(0, 242, 254, 0.08), rgba(16, 185, 129, 0.04));
+            border: 1.5px solid rgba(0, 242, 254, 0.3);
+            border-radius: 16px;
+            padding: 16px 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
         }
 
-        .copilot-pulse {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 11px;
-            font-weight: 800;
-            color: var(--neon-green);
+        .robo-avatar {
+            font-size: 32px;
+            line-height: 1;
+            filter: drop-shadow(0 0 10px var(--accent));
+        }
+
+        .robo-text-box h4 {
+            margin: 0;
+            font-size: 13px;
+            color: var(--accent);
             text-transform: uppercase;
             letter-spacing: 0.8px;
-        }
-        .pulse-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: var(--neon-green);
-            box-shadow: 0 0 10px var(--neon-green);
-            animation: pulse 1.8s infinite;
-        }
-        @keyframes pulse {
-            0% { transform: scale(0.9); opacity: 0.8; }
-            50% { transform: scale(1.4); opacity: 1; }
-            100% { transform: scale(0.9); opacity: 0.8; }
-        }
-
-        /* Filter Tabs */
-        .copilot-filters {
             display: flex;
+            align-items: center;
             gap: 6px;
-            margin-bottom: 12px;
-            overflow-x: auto;
-            padding-bottom: 4px;
         }
 
-        .filter-chip {
-            padding: 4px 10px;
-            border-radius: 6px;
-            font-size: 11px;
-            font-weight: 700;
-            background: rgba(255, 255, 255, 0.05);
+        .robo-text-box p {
+            margin: 4px 0 0 0;
+            font-size: 14px;
+            font-weight: 600;
+            color: #fff;
+            line-height: 1.5;
+            transition: color 0.3s;
+        }
+
+        /* Calm, Non-Flickering Recent History List */
+        .history-title {
+            font-size: 12px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
             color: var(--text-dim);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            cursor: pointer;
-            white-space: nowrap;
-            transition: all 0.2s;
-        }
-        .filter-chip.active {
-            background: rgba(0, 242, 254, 0.2);
-            color: var(--accent);
-            border-color: var(--accent);
+            margin-bottom: 10px;
         }
 
-        /* Stream Feed */
-        .copilot-feed {
+        .history-list {
             flex: 1;
-            max-height: 270px;
+            max-height: 200px;
             overflow-y: auto;
             display: flex;
             flex-direction: column;
-            gap: 10px;
-            padding-right: 6px;
+            gap: 8px;
+            padding-right: 4px;
         }
 
-        .copilot-item {
+        .history-item {
             background: rgba(255, 255, 255, 0.03);
             border: 1px solid rgba(255, 255, 255, 0.06);
-            border-left: 3px solid var(--accent);
-            border-radius: 8px;
+            border-radius: 10px;
             padding: 10px 14px;
             display: flex;
-            flex-direction: column;
-            gap: 4px;
-            transition: all 0.3s;
-            animation: fadeInItem 0.3s ease forwards;
-        }
-        @keyframes fadeInItem {
-            from { opacity: 0; transform: translateY(-4px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .copilot-item.cat-ROAMER { border-left-color: var(--neon-green); }
-        .copilot-item.cat-SHIELD { border-left-color: var(--neon-amber); }
-        .copilot-item.cat-COPILOT { border-left-color: var(--neon-purple); }
-
-        .item-top {
-            display: flex;
-            justify-content: space-between;
             align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            transition: background 0.2s;
+        }
+        .history-item:hover {
+            background: rgba(255, 255, 255, 0.06);
         }
 
-        .item-cat {
-            font-size: 10px;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 0.6px;
-            padding: 2px 6px;
-            border-radius: 4px;
-            background: rgba(0, 242, 254, 0.15);
-            color: var(--accent);
+        .hist-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
-        .cat-ROAMER .item-cat { background: rgba(16, 185, 129, 0.15); color: var(--neon-green); }
-        .cat-SHIELD .item-cat { background: rgba(245, 158, 11, 0.15); color: var(--neon-amber); }
-        .cat-COPILOT .item-cat { background: rgba(168, 85, 247, 0.15); color: var(--neon-purple); }
-
-        .item-time {
+        .hist-icon {
+            font-size: 18px;
+        }
+        .hist-text h5 {
+            margin: 0;
+            font-size: 13px;
+            color: #fff;
+            font-weight: 700;
+        }
+        .hist-text p {
+            margin: 2px 0 0 0;
+            font-size: 12px;
+            color: var(--text-dim);
+        }
+        .hist-time {
             font-size: 11px;
             color: var(--text-dim);
             font-family: monospace;
-        }
-
-        .item-title {
-            font-size: 13px;
-            font-weight: 700;
-            color: #fff;
-        }
-
-        .item-msg {
-            font-size: 12px;
-            color: var(--text-dim);
-            line-height: 1.4;
-        }
-
-        .item-impact {
-            align-self: flex-start;
-            font-size: 11px;
-            font-weight: 700;
-            color: var(--neon-green);
-            margin-top: 2px;
+            white-space: nowrap;
         }
 
         /* Cyberpunk Fluid Toast Notifications */
@@ -906,60 +860,64 @@
     </div>
 
     <!-- ======================================================== -->
-    <!-- 🔥 UPGRADED: LIVE RF WAVEFORM & AI SENTRY COPILOT        -->
+    <!-- 🔥 KID-SIMPLE LEFT-TO-RIGHT GRAPH & ROBO-SENTRY ASSISTANT -->
     <!-- ======================================================== -->
     <div class="bottom-grid">
-        <!-- Left: Live Rolling RF Spectrum Waveform -->
+        <!-- Left: Intuitive Left-to-Right Air Traffic Wave -->
         <div class="radar-card">
             <div>
                 <div class="card-header-flex">
                     <div>
-                        <span class="card-title">Live Rolling RF Airwaves (ESP32 Radar)</span>
-                        <div style="font-size:12px; color:var(--text-dim); margin-top:2px;">Real-time continuous 2.4 GHz spectrum interference monitoring</div>
+                        <span class="card-title">🌊 Room Air Traffic Wave (Moving Left ➔ Right)</span>
+                        <div class="zone-legend">
+                            <span style="color: var(--neon-green);"><span class="zone-dot" style="background:var(--neon-green);"></span>Low (Clean Air 🏎️)</span>
+                            <span style="color: var(--neon-amber);"><span class="zone-dot" style="background:var(--neon-amber);"></span>Medium (Normal 🚗)</span>
+                            <span style="color: var(--neon-red);"><span class="zone-dot" style="background:var(--neon-red);"></span>High (Traffic Jam 🛑)</span>
+                        </div>
                     </div>
-                    <div class="chart-ctrls">
-                        <button id="btn-chart-wave" class="chart-toggle-btn active" onclick="setChartMode('line')">📈 Live Wave</button>
-                        <button id="btn-chart-bar" class="chart-toggle-btn" onclick="setChartMode('bar')">📊 Bars</button>
+                    <div style="text-align: right;">
+                        <span class="pill green" id="pill-current-zone">🏎️ Clean Air (20%)</span>
                     </div>
                 </div>
 
-                <div style="height: 230px; position: relative; margin-top: 10px;">
-                    <canvas id="spectrumChart"></canvas>
+                <!-- Left to Right Flowing Waveform Canvas -->
+                <div style="height: 220px; position: relative; margin-top: 12px;">
+                    <canvas id="trafficWaveChart"></canvas>
                 </div>
             </div>
 
             <div class="radar-meta-row">
-                <span>📡 Sniffer Mode: <b>Promiscuous Active</b></span>
-                <span id="radar-live-indicator">🔄 Updates every 1.5s</span>
-                <span>Active Frequency: <b>2.412 - 2.462 GHz</b></span>
+                <span>Timeline: <b>Past (Left) ➔ Now (Right)</b></span>
+                <span>📡 Sensor: <b>ESP32 Active</b></span>
+                <span>Simple Rule: <b>Lower the wave, faster your net!</b></span>
             </div>
         </div>
 
-        <!-- Right: AI Sentry Copilot Console -->
-        <div class="copilot-card">
-            <div class="copilot-header">
+        <!-- Right: Friendly Robo-Sentry Assistant (Zero Flicker) -->
+        <div class="robo-card">
+            <div class="card-header-flex">
                 <div>
-                    <span class="card-title" style="color:#fff;">🤖 NetShield AI Copilot</span>
-                    <div style="font-size: 12px; color: var(--text-dim); margin-top: 2px;">Autonomous Network Reasoning & Sentinel Stream</div>
+                    <span class="card-title" style="color:#fff;">🤖 Robo-Sentry (Your Wi-Fi Guard)</span>
+                    <div style="font-size: 12px; color: var(--text-dim); margin-top: 2px;">Your personal assistant keeping your internet fast</div>
                 </div>
-                <div class="copilot-pulse">
-                    <div class="pulse-dot"></div>
-                    <span>Sentry Active</span>
+                <div class="badge online" style="padding: 4px 10px; font-size: 11px;">
+                    ● Guarding Room
                 </div>
             </div>
 
-            <!-- Filter Chips -->
-            <div class="copilot-filters">
-                <span class="filter-chip active" onclick="filterLogs('ALL', this)">All Feeds</span>
-                <span class="filter-chip" onclick="filterLogs('RADAR', this)">📡 Radar</span>
-                <span class="filter-chip" onclick="filterLogs('ROAMER', this)">⚡ Roamer</span>
-                <span class="filter-chip" onclick="filterLogs('SHIELD', this)">🛡️ Shield</span>
-                <span class="filter-chip" onclick="filterLogs('COPILOT', this)">💡 Advice</span>
+            <!-- Friendly Animated Speech Bubble -->
+            <div class="robo-bubble-box">
+                <div class="robo-avatar" id="robo-avatar">🤖</div>
+                <div class="robo-text-box">
+                    <h4>Robo-Sentry says:</h4>
+                    <p id="robo-speech-text">🌟 Everything is awesome! Your Wi-Fi is super fast and ready for YouTube, games & movies.</p>
+                </div>
             </div>
 
-            <!-- Real-time Event Feed -->
-            <div class="copilot-feed" id="copilot-feed">
-                <!-- Injected via JavaScript -->
+            <!-- Calm, Non-Flickering Recent Actions -->
+            <div class="history-title">Recent Helpful Actions</div>
+            <div class="history-list" id="history-container">
+                <!-- Stable Non-Flickering Items -->
             </div>
         </div>
     </div>
@@ -989,184 +947,124 @@
             }, 3500);
         }
 
-        // Live Rolling Spectrum Chart Setup
-        let currentChartMode = 'line';
-        const ctx = document.getElementById('spectrumChart').getContext('2d');
+        // ========================================================
+        // 🌊 LEFT-TO-RIGHT AIR TRAFFIC WAVE CHART
+        // ========================================================
+        const ctx = document.getElementById('trafficWaveChart').getContext('2d');
         
-        let spectrumChart = new Chart(ctx, {
+        // Horizontal Gradient: Green (bottom) -> Amber (middle) -> Red (top)
+        const gradient = ctx.createLinearGradient(0, 200, 0, 0);
+        gradient.addColorStop(0, 'rgba(16, 185, 129, 0.25)'); // Clean
+        gradient.addColorStop(0.5, 'rgba(245, 158, 11, 0.25)'); // Medium
+        gradient.addColorStop(1, 'rgba(239, 68, 68, 0.35)'); // Jammed
+
+        const labelsLeftToRight = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', 'Now ➔'];
+
+        const trafficChart = new Chart(ctx, {
             type: 'line',
             data: {
-                labels: ['-18s', '-15s', '-12s', '-9s', '-6s', '-3s', 'Now'],
-                datasets: [
-                    {
-                        label: 'Lane 11 (Cleanest Lane)',
-                        data: [0, 0, 0, 0, 0, 0, 0],
-                        borderColor: '#10b981',
-                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                        fill: true,
-                        tension: 0.4,
-                        borderWidth: 2,
-                        pointRadius: 3,
-                        pointBackgroundColor: '#10b981'
-                    },
-                    {
-                        label: 'Lane 1 (Moderate Lane)',
-                        data: [2, 2, 2, 2, 2, 2, 2],
-                        borderColor: '#f59e0b',
-                        backgroundColor: 'transparent',
-                        tension: 0.4,
-                        borderWidth: 2,
-                        pointRadius: 2,
-                        pointBackgroundColor: '#f59e0b'
-                    },
-                    {
-                        label: 'Lane 6 (Jammed Lane)',
-                        data: [4, 4, 3, 4, 4, 3, 3],
-                        borderColor: '#ef4444',
-                        backgroundColor: 'rgba(239, 68, 68, 0.08)',
-                        fill: true,
-                        tension: 0.4,
-                        borderWidth: 2,
-                        pointRadius: 2,
-                        pointBackgroundColor: '#ef4444'
-                    }
-                ]
+                labels: labelsLeftToRight,
+                datasets: [{
+                    label: 'Room Air Traffic (0-100%)',
+                    data: [18, 20, 22, 19, 21, 24, 20, 18, 22, 25, 20, 19, 21, 23, 20, 22, 19, 21, 20, 20],
+                    borderColor: '#00f2fe',
+                    backgroundColor: gradient,
+                    fill: true,
+                    tension: 0.45,
+                    borderWidth: 3,
+                    pointRadius: (ctx) => (ctx.dataIndex === 19 ? 6 : 0), // Highlight NOW point
+                    pointBackgroundColor: '#00f2fe',
+                    pointHoverRadius: 6
+                }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                animation: { duration: 600 },
+                animation: false, // Prevents jumpy redraws!
                 scales: {
                     y: {
-                        beginAtZero: true,
-                        ticks: { color: '#94a3b8', stepSize: 1 },
-                        grid: { color: 'rgba(255, 255, 255, 0.05)' }
+                        min: 0,
+                        max: 100,
+                        ticks: {
+                            color: '#94a3b8',
+                            stepSize: 25,
+                            callback: (val) => val === 0 ? '0% (Empty)' : (val === 50 ? '50% (Busy)' : (val === 100 ? '100% (Jammed)' : val + '%'))
+                        },
+                        grid: {
+                            color: (context) => {
+                                if (context.tick.value === 35) return 'rgba(16, 185, 129, 0.2)';
+                                if (context.tick.value === 70) return 'rgba(239, 68, 68, 0.2)';
+                                return 'rgba(255, 255, 255, 0.05)';
+                            }
+                        }
                     },
                     x: {
-                        ticks: { color: '#94a3b8' },
+                        ticks: { color: '#94a3b8', maxRotation: 0 },
                         grid: { display: false }
                     }
                 },
                 plugins: {
-                    legend: { labels: { color: '#f8fafc', font: { size: 11 } } }
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: (ctx) => `Traffic Level: ${ctx.parsed.y}%`
+                        }
+                    }
                 }
             }
         });
 
-        function setChartMode(mode) {
-            currentChartMode = mode;
-            document.getElementById('btn-chart-wave').className = 'chart-toggle-btn ' + (mode === 'line' ? 'active' : '');
-            document.getElementById('btn-chart-bar').className = 'chart-toggle-btn ' + (mode === 'bar' ? 'active' : '');
-            
-            spectrumChart.destroy();
-            if (mode === 'line') {
-                spectrumChart = new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: [],
-                        datasets: [
-                            {
-                                label: 'Lane 11 (Cleanest)',
-                                data: [],
-                                borderColor: '#10b981',
-                                backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                                fill: true,
-                                tension: 0.4,
-                                borderWidth: 2.5
-                            },
-                            {
-                                label: 'Lane 1 (Moderate)',
-                                data: [],
-                                borderColor: '#f59e0b',
-                                tension: 0.4,
-                                borderWidth: 2
-                            },
-                            {
-                                label: 'Lane 6 (Jammed)',
-                                data: [],
-                                borderColor: '#ef4444',
-                                backgroundColor: 'rgba(239, 68, 68, 0.08)',
-                                fill: true,
-                                tension: 0.4,
-                                borderWidth: 2
-                            }
-                        ]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        animation: { duration: 500 },
-                        scales: {
-                            y: { beginAtZero: true, ticks: { color: '#94a3b8', stepSize: 1 }, grid: { color: 'rgba(255, 255, 255, 0.05)' } },
-                            x: { ticks: { color: '#94a3b8' }, grid: { display: false } }
-                        },
-                        plugins: { legend: { labels: { color: '#f8fafc', font: { size: 11 } } } }
-                    }
-                });
-            } else {
-                spectrumChart = new Chart(ctx, {
-                    type: 'bar',
-                    data: {
-                        labels: ['Lane 1 (Ch 1)', 'Lane 6 (Ch 6)', 'Lane 11 (Ch 11)'],
-                        datasets: [{
-                            label: 'Active Routers Competing',
-                            data: [0, 0, 0],
-                            backgroundColor: ['#f59e0b', '#ef4444', '#10b981'],
-                            borderRadius: 8
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        scales: {
-                            y: { beginAtZero: true, ticks: { color: '#94a3b8', stepSize: 1 }, grid: { color: 'rgba(255, 255, 255, 0.05)' } },
-                            x: { ticks: { color: '#f8fafc' }, grid: { display: false } }
-                        },
-                        plugins: { legend: { labels: { color: '#f8fafc' } } }
-                    }
-                });
-            }
-            fetchStats();
-        }
+        // ========================================================
+        // 🤖 ZERO-FLICKER ROBO-SENTRY ASSISTANT FEED
+        // ========================================================
+        const renderedEventIds = new Set();
 
-        // Active Copilot Filter
-        let activeCopilotFilter = 'ALL';
-        function filterLogs(category, el) {
-            activeCopilotFilter = category;
-            document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
-            el.classList.add('active');
-            renderCopilotFeed(lastFetchedEvents);
-        }
-
-        let lastFetchedEvents = [];
-
-        function renderCopilotFeed(events) {
+        function updateRoboSentryFeed(events) {
             if (!events || events.length === 0) return;
-            const container = document.getElementById('copilot-feed');
-            
-            const filtered = activeCopilotFilter === 'ALL' 
-                ? events 
-                : events.filter(e => e.category === activeCopilotFilter);
+            const container = document.getElementById('history-container');
 
-            if (filtered.length === 0) {
-                container.innerHTML = `<div style="text-align:center; color:var(--text-dim); padding:20px; font-size:12px;">No events in this category yet.</div>`;
-                return;
-            }
+            // Find truly new events
+            const newEvents = events.filter(e => !renderedEventIds.has(e.id));
+            if (newEvents.length === 0) return; // ZERO FLICKER! No re-render if nothing new!
 
-            container.innerHTML = filtered.map(item => `
-                <div class="copilot-item cat-${item.category}">
-                    <div class="item-top">
-                        <span class="item-cat">${item.category}</span>
-                        <span class="item-time">${item.time}</span>
+            // Add new events to set
+            newEvents.forEach(e => renderedEventIds.add(e.id));
+
+            // Icons mapping
+            const iconMap = {
+                'RADAR': '📡',
+                'ROAMER': '🚀',
+                'SHIELD': '🛡️',
+                'COPILOT': '💡'
+            };
+
+            // Prepend new elements smoothly
+            newEvents.reverse().forEach(item => {
+                const icon = iconMap[item.category] || '⚡';
+                const el = document.createElement('div');
+                el.className = 'history-item';
+                el.innerHTML = `
+                    <div class="hist-left">
+                        <span class="hist-icon">${icon}</span>
+                        <div class="hist-text">
+                            <h5>${item.title}</h5>
+                            <p>${item.message}</p>
+                        </div>
                     </div>
-                    <div class="item-title">${item.title}</div>
-                    <div class="item-msg">${item.message}</div>
-                    <div class="item-impact">${item.impact}</div>
-                </div>
-            `).join('');
+                    <span class="hist-time">${item.time}</span>
+                `;
+                container.insertBefore(el, container.firstChild);
+            });
+
+            // Keep maximum 8 elements in view
+            while (container.children.length > 8) {
+                container.removeChild(container.lastChild);
+            }
         }
 
-        // Main Polling Loop
+        // ========================================================
+        // 🔄 MAIN LIVE TELEMETRY POLLING LOOP
+        // ========================================================
         async function fetchStats() {
             try {
                 const res = await fetch('/api/stats');
@@ -1279,25 +1177,41 @@
                     }
                 }
 
-                // 10. Upgraded Live Spectrum Chart Update
-                if (currentChartMode === 'line') {
-                    if (data.spectrum_history && data.spectrum_history.length > 0) {
-                        const hist = data.spectrum_history;
-                        spectrumChart.data.labels = hist.map(h => h.time);
-                        spectrumChart.data.datasets[0].data = hist.map(h => h.ch11);
-                        spectrumChart.data.datasets[1].data = hist.map(h => h.ch1);
-                        spectrumChart.data.datasets[2].data = hist.map(h => h.ch6);
-                        spectrumChart.update();
+                // 10. Update Left-to-Right Air Traffic Wave
+                if (data.traffic_wave && data.traffic_wave.length > 0) {
+                    trafficChart.data.datasets[0].data = data.traffic_wave;
+                    const latestVal = data.traffic_wave[data.traffic_wave.length - 1];
+                    
+                    // Update pill status
+                    const pillZone = document.getElementById('pill-current-zone');
+                    if (latestVal <= 35) {
+                        pillZone.className = 'pill green';
+                        pillZone.textContent = `🏎️ Clean Air (${latestVal}%)`;
+                    } else if (latestVal <= 70) {
+                        pillZone.className = 'pill cyan';
+                        pillZone.textContent = `🚗 Normal Traffic (${latestVal}%)`;
+                    } else {
+                        pillZone.className = 'pill' ;
+                        pillZone.style.background = 'rgba(239, 68, 68, 0.2)';
+                        pillZone.style.color = 'var(--neon-red)';
+                        pillZone.style.border = '1px solid var(--neon-red)';
+                        pillZone.textContent = `🛑 Traffic Jam (${latestVal}%)`;
                     }
-                } else {
-                    spectrumChart.data.datasets[0].data = [data.ch1, data.ch6, data.ch11];
-                    spectrumChart.update();
+                    trafficChart.update('none'); // Update without canvas flicker!
                 }
 
-                // 11. Upgraded AI Copilot Sentry Feed
+                // 11. Update Friendly Robo-Sentry Speech Bubble (Smooth text change)
+                if (data.robo_speech) {
+                    document.getElementById('robo-speech-text').textContent = data.robo_speech;
+                    const avatar = document.getElementById('robo-avatar');
+                    if (data.robo_mood === 'happy') avatar.textContent = '🤖';
+                    else if (data.robo_mood === 'alert') avatar.textContent = '⚡';
+                    else avatar.textContent = '🛑';
+                }
+
+                // 12. Update Non-Flickering Recent History
                 if (data.assistant_events) {
-                    lastFetchedEvents = data.assistant_events;
-                    renderCopilotFeed(lastFetchedEvents);
+                    updateRoboSentryFeed(data.assistant_events);
                 }
 
             } catch (err) {
