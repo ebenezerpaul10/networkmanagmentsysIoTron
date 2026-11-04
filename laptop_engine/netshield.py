@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 """
-NetShield-IoT: Laptop Companion Engine & Optimization Daemon (v2.5)
+NetShield-IoT: Laptop Companion Engine & Optimization Daemon (v3.0 Ultra)
 Features:
-  1. Live Before vs After Impact Telemetry & Benchmarking
-  2. Strict SSID matching & Automatic Rollback Safety
-  3. Real-time Download Speed Meter
-  4. Real-time active AP polling every 1.5s
-  5. Built-in REST API and Cyberpunk Web Dashboard
+  1. Live 0-100 Master Internet Health Score
+  2. Plain-English "Kid-Friendly" Network Summary & Highway Analogy
+  3. Live Before vs After Impact Telemetry & Benchmarking
+  4. Real-time Download Speed Meter
+  5. Strict SSID matching & Automatic Rollback Safety
+  6. Local DNS Shield & ESP32 Serial Radar
 """
 
 import sys
@@ -33,7 +34,6 @@ DNS_LISTEN_PORT = 5353
 WEB_PORT = 8080
 HTML_FILE_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "web_dashboard", "index.html")
 
-# Ad/Tracker Blocklist Keywords
 BLOCKED_DOMAINS = [
     "doubleclick.net", "googleadservices.com", "adservice.google.com",
     "telemetry.microsoft.com", "analytics.google.com", "facebook.com/tr",
@@ -41,24 +41,30 @@ BLOCKED_DOMAINS = [
     "adroll.com", "criteo.com", "popads.net", "tracking", "telemetry"
 ]
 
-# Shared Global State
 stats = {
     # System & Hardware
     "esp_connected": False,
     "esp_port": "None",
     "auto_roam_enabled": False,
     
+    # 0-100 Master Internet Score
+    "health_score": 85,
+    "score_status": "Ultra Smooth 🚀",
+    "simple_summary": "Your connection is flying! ESP32 radar is guarding your room.",
+    
     # Active Connection on Laptop (Real-Time)
     "current_ssid": "Scanning...",
     "current_bssid": "N/A",
     "current_channel": 0,
     "current_signal": 0,
+    "signal_bars": 3,
     
     # Real-Time Download Speed
     "download_speed_mbps": 0.0,
     "download_speed_str": "0.00 Mbps",
+    "speed_verdict": "Idle",
     
-    # Best Clean Candidate AP (Strictly same SSID only!)
+    # Best Clean Candidate AP
     "best_ssid": "KU-WL",
     "best_bssid": "N/A",
     "best_rssi": -100,
@@ -66,6 +72,14 @@ stats = {
     "congestion_score": 0,
     "total_aps": 0,
     "ch1": 0, "ch6": 0, "ch11": 0,
+    
+    # Highway Traffic Analogy
+    "highway": {
+        "lane1": {"channel": 1, "count": 0, "status": "Empty 🏎️", "desc": "Fast lane"},
+        "lane6": {"channel": 6, "count": 0, "status": "Empty 🏎️", "desc": "Fast lane"},
+        "lane11": {"channel": 11, "count": 0, "status": "Empty 🏎️", "desc": "Fast lane"},
+        "best_lane": 11
+    },
     
     # Performance & Security
     "latency_ms": 0.0,
@@ -162,6 +176,53 @@ def find_best_candidate_for_ssid(target_ssid):
         pass
     return None, 0, 0
 
+def calculate_master_score():
+    """Computes a logical 0-100 Master Internet Score and simple summary."""
+    score = 0
+    
+    # 1. Latency Factor (Max 40 pts)
+    lat = stats["latency_ms"]
+    if lat > 0:
+        if lat <= 30:
+            score += 40
+        elif lat <= 60:
+            score += 35
+        elif lat <= 100:
+            score += 25
+        elif lat <= 200:
+            score += 15
+        else:
+            score += 5
+    
+    # 2. Signal Factor (Max 35 pts)
+    sig = stats["current_signal"]
+    score += int((sig / 100.0) * 35)
+    
+    # 3. Congestion / Channel Factor (Max 15 pts)
+    best_ch = stats["recommended_channel"]
+    cur_ch = stats["current_channel"]
+    if cur_ch == best_ch or cur_ch > 14: # 5GHz or cleanest 2.4G
+        score += 15
+    else:
+        score += 5
+        
+    # 4. Hardware Radar Connected (10 pts)
+    if stats["esp_connected"]:
+        score += 10
+        
+    stats["health_score"] = min(100, max(10, score))
+    
+    # Friendly status & summary
+    if stats["health_score"] >= 80:
+        stats["score_status"] = "Ultra Smooth 🚀"
+        stats["simple_summary"] = "Your network is blazing fast! Zero lag for gaming, video calls & 4K video."
+    elif stats["health_score"] >= 60:
+        stats["score_status"] = "Good & Steady ⚡"
+        stats["simple_summary"] = "Good connection! Normal browsing & YouTube streaming are smooth."
+    else:
+        stats["score_status"] = "Traffic Jam 🚗"
+        stats["simple_summary"] = "Your router is congested! Click 'Boost Internet' to hop to an empty channel."
+
 def update_comparison_metrics(before_state, after_state):
     """Calculates live Before vs After deltas."""
     stats["before_metrics"] = before_state
@@ -183,7 +244,6 @@ def switch_to_bssid(ssid, target_bssid):
     if not ssid or ssid in ["Disconnected", "Scanning..."] or not target_bssid:
         return False, "No valid SSID or Target AP selected"
         
-    # Capture BEFORE snapshot
     before_snapshot = {
         "bssid": stats["current_bssid"],
         "channel": stats["current_channel"],
@@ -193,7 +253,7 @@ def switch_to_bssid(ssid, target_bssid):
         "timestamp": time.strftime("%H:%M:%S")
     }
     
-    log_event(f"Roamer Action: Attempting switch to AP [{target_bssid}] for network '{ssid}'...")
+    log_event(f"Roamer Action: Switching to cleaner AP [{target_bssid}] for network '{ssid}'...")
     try:
         subprocess.check_call(
             ["nmcli", "connection", "modify", ssid, "802-11-wireless.bssid", target_bssid],
@@ -204,11 +264,9 @@ def switch_to_bssid(ssid, target_bssid):
             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=8
         )
         
-        # Give network 1.5s to settle and measure new after state
         time.sleep(1.5)
         new_ssid, new_bssid, new_chan, new_sig = get_current_wifi_status()
         
-        # Quick latency measure
         new_lat = stats["latency_ms"]
         try:
             t0 = time.time()
@@ -229,7 +287,7 @@ def switch_to_bssid(ssid, target_bssid):
         
         update_comparison_metrics(before_snapshot, after_snapshot)
         log_event(f"SUCCESS: Locked to AP [{target_bssid}]! Latency: {new_lat} ms (Signal: {new_sig}%)")
-        return True, f"Successfully connected to cleaner AP ({target_bssid})"
+        return True, f"Successfully jumped to faster router ({target_bssid})!"
         
     except Exception as e:
         log_event(f"Switch failed: {e}. Executing immediate safety rollback...")
@@ -275,8 +333,13 @@ def download_speed_worker():
             
             if mbps >= 1.0:
                 stats["download_speed_str"] = f"{mbps:.2f} Mbps"
+                stats["speed_verdict"] = "High Throughput ⚡"
+            elif kbps >= 50:
+                stats["download_speed_str"] = f"{kbps:.1f} KB/s"
+                stats["speed_verdict"] = "Active Traffic"
             else:
                 stats["download_speed_str"] = f"{kbps:.1f} KB/s"
+                stats["speed_verdict"] = "Idle / Light Data"
         except Exception:
             pass
 
@@ -290,7 +353,12 @@ def active_connection_poller():
         stats["current_channel"] = chan
         stats["current_signal"] = sig
         
-        # Real-time candidate
+        # Calculate signal bars (1 to 4)
+        if sig >= 75: stats["signal_bars"] = 4
+        elif sig >= 50: stats["signal_bars"] = 3
+        elif sig >= 25: stats["signal_bars"] = 2
+        else: stats["signal_bars"] = 1
+        
         cand_bssid, cand_chan, cand_sig = find_best_candidate_for_ssid(ssid)
         if cand_bssid:
             stats["best_ssid"] = ssid
@@ -298,19 +366,18 @@ def active_connection_poller():
             stats["recommended_channel"] = cand_chan
             stats["best_rssi"] = -100 + cand_sig
             
-            # Live update after metrics if currently on that AP
             if bssid == cand_bssid:
                 stats["after_metrics"]["bssid"] = bssid
                 stats["after_metrics"]["channel"] = chan
                 stats["after_metrics"]["signal"] = sig
                 stats["after_metrics"]["latency_ms"] = stats["latency_ms"]
             
-            # Auto-roam check
             if stats["auto_roam_enabled"] and bssid != "None" and cand_bssid != bssid:
                 if cand_sig > (sig + 15):
                     log_event(f"Auto-Roam triggered: Candidate {cand_bssid} is +{cand_sig - sig}% stronger!")
                     switch_to_bssid(ssid, cand_bssid)
         
+        calculate_master_score()
         time.sleep(1.5)
 
 def latency_worker():
@@ -334,6 +401,7 @@ def latency_worker():
             stats["latency_ms"] = -1
             stats["network_health"] = "🔴 PACKET DROP / TIMEOUT"
         
+        calculate_master_score()
         time.sleep(3.0)
 
 def esp_listener_worker():
@@ -361,9 +429,32 @@ def esp_listener_worker():
                         if data.get("type") == "telemetry":
                             stats["total_aps"] = data.get("total_aps", 0)
                             stats["congestion_score"] = data.get("congestion_score", 0)
-                            stats["ch1"] = data.get("ch1_count", 0)
-                            stats["ch6"] = data.get("ch6_count", 0)
-                            stats["ch11"] = data.get("ch11_count", 0)
+                            c1 = data.get("ch1_count", 0)
+                            c6 = data.get("ch6_count", 0)
+                            c11 = data.get("ch11_count", 0)
+                            stats["ch1"] = c1
+                            stats["ch6"] = c6
+                            stats["ch11"] = c11
+                            
+                            # Highway Analogy Logic
+                            def get_lane_info(count):
+                                if count >= 4: return "Jammed 🚗🚗🚗", "Heavy interference"
+                                elif count >= 2: return "Moderate 🚗", "Medium traffic"
+                                else: return "Empty 🏎️", "Fast lane"
+                                
+                            s1, d1 = get_lane_info(c1)
+                            s6, d6 = get_lane_info(c6)
+                            s11, d11 = get_lane_info(c11)
+                            
+                            stats["highway"]["lane1"] = {"channel": 1, "count": c1, "status": s1, "desc": d1}
+                            stats["highway"]["lane6"] = {"channel": 6, "count": c6, "status": s6, "desc": d6}
+                            stats["highway"]["lane11"] = {"channel": 11, "count": c11, "status": s11, "desc": d11}
+                            
+                            # Best Lane
+                            least = min(c1, c6, c11)
+                            if least == c11: stats["highway"]["best_lane"] = 11
+                            elif least == c6: stats["highway"]["best_lane"] = 6
+                            else: stats["highway"]["best_lane"] = 1
                     except json.JSONDecodeError:
                         pass
         except Exception:
@@ -393,7 +484,7 @@ def dns_shield_worker():
                 reply = request.reply()
                 reply.add_answer(RR(qname, QTYPE.A, rdata=A("0.0.0.0"), ttl=60))
                 sock.sendto(reply.pack(), addr)
-                log_event(f"DNS Shield blocked ad/tracker: {qname}")
+                log_event(f"DNS Shield blocked junk tracker: {qname}")
             else:
                 up_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
                 up_sock.settimeout(1.5)
@@ -443,7 +534,6 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(json.dumps({"auto_roam_enabled": stats["auto_roam_enabled"]}).encode())
         elif self.path == "/api/capture_baseline":
-            # Captures current state as the 'BEFORE' baseline
             stats["before_metrics"] = {
                 "bssid": stats["current_bssid"],
                 "channel": stats["current_channel"],
@@ -469,7 +559,7 @@ def web_server_worker():
     server.serve_forever()
 
 if __name__ == "__main__":
-    log_event("NetShield-IoT Engine v2.5 starting...")
+    log_event("NetShield-IoT Engine v3.0 Ultra starting...")
     
     threading.Thread(target=dns_shield_worker, daemon=True).start()
     threading.Thread(target=download_speed_worker, daemon=True).start()
