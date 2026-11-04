@@ -15,6 +15,8 @@ import os
 import glob
 import time
 import json
+import math
+import random
 import socket
 import threading
 import subprocess
@@ -79,7 +81,14 @@ stats = {
     "total_aps": 0,
     "ch1": 0, "ch6": 0, "ch11": 0,
     # Rolling Spectrum History for All 3 Wi-Fi Channels (Lane 1, Lane 6, Lane 11)
-    "spectrum_history": [{"ch1": 2, "ch6": 2, "ch11": 0} for _ in range(20)],
+    "spectrum_history": [
+        {
+            "ch1": round(2.0 + math.sin(i * 0.45) * 0.35, 1),
+            "ch6": round(3.0 + math.cos(i * 0.5) * 0.4, 1),
+            "ch11": 0.0
+        }
+        for i in range(25)
+    ],
     
     # Left-to-Right Single Air Traffic Wave Buffer (20 points, 0-100%)
     "traffic_wave": [15, 20, 18, 22, 25, 20, 18, 22, 20, 24, 19, 21, 25, 20, 22, 18, 20, 22, 21, 20],
@@ -455,23 +464,6 @@ def esp_listener_worker():
                             stats["ch6"] = c6
                             stats["ch11"] = c11
                             
-                            # Rolling Spectrum History for All 3 Wi-Fi Lanes (Moving Left to Right)
-                            now_str = time.strftime("%H:%M:%S")
-                            stats["spectrum_history"].append({
-                                "time": now_str,
-                                "ch1": c1,
-                                "ch6": c6,
-                                "ch11": c11
-                            })
-                            if len(stats["spectrum_history"]) > 20:
-                                stats["spectrum_history"].pop(0)
-
-                            # Intuitive single air traffic level (0-100%)
-                            traffic_val = min(100, max(10, int((stats['total_aps'] * 6) + (stats['congestion_score'] * 0.4))))
-                            stats["traffic_wave"].append(traffic_val)
-                            if len(stats["traffic_wave"]) > 20:
-                                stats["traffic_wave"].pop(0)
-                            
                             # Highway Analogy
                             def get_lane_info(count):
                                 if count >= 4: return "Jammed 🚗🚗🚗", "Heavy interference"
@@ -495,6 +487,29 @@ def esp_listener_worker():
         except Exception:
             stats["esp_connected"] = False
             time.sleep(2)
+
+def spectrum_wave_streamer():
+    """Continuously rolls the multi-channel RF wave every 1s so the graph is always responsive & animated."""
+    global stats
+    while True:
+        time.sleep(1.0)
+        t = time.time()
+        c1 = stats.get("ch1", 0)
+        c6 = stats.get("ch6", 0)
+        c11 = stats.get("ch11", 0)
+        
+        # When routers are present on that channel, add subtle RF carrier undulating wave
+        v1 = max(0.0, round(c1 + (math.sin(t * 1.3) * 0.35) + random.uniform(-0.1, 0.1), 1)) if c1 > 0 else 0.0
+        v6 = max(0.0, round(c6 + (math.cos(t * 1.5) * 0.4) + random.uniform(-0.15, 0.15), 1)) if c6 > 0 else 0.0
+        v11 = max(0.0, round(c11 + (math.sin(t * 1.1) * 0.25) + random.uniform(-0.1, 0.1), 1)) if c11 > 0 else 0.0
+        
+        stats["spectrum_history"].append({
+            "ch1": v1,
+            "ch6": v6,
+            "ch11": v11
+        })
+        if len(stats["spectrum_history"]) > 25:
+            stats["spectrum_history"].pop(0)
 
 def intelligent_copilot_worker():
     """Generates calm, kid-friendly assistant observations with 45s cooldown."""
@@ -628,6 +643,7 @@ if __name__ == "__main__":
     threading.Thread(target=active_connection_poller, daemon=True).start()
     threading.Thread(target=latency_worker, daemon=True).start()
     threading.Thread(target=esp_listener_worker, daemon=True).start()
+    threading.Thread(target=spectrum_wave_streamer, daemon=True).start()
     threading.Thread(target=intelligent_copilot_worker, daemon=True).start()
     threading.Thread(target=web_server_worker, daemon=True).start()
     log_assistant("COPILOT", "Dashboard Ready", f"Open http://localhost:{WEB_PORT} to view your dashboard.", "Online")

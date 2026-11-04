@@ -909,17 +909,12 @@
                     <canvas id="spectrumChart"></canvas>
                 </div>
 
-                <!-- Clean, Friendly Timeline Bar (NO NUMBERS) -->
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px; font-size: 11px; color: var(--text-dim); padding: 0 4px;">
-                    <span>◀ Past Airwaves (Left)</span>
-                    <span style="color: var(--accent); font-weight: 700;">● Live Real-Time Airwaves (Right) ▶</span>
-                </div>
             </div>
 
             <div class="radar-meta-row">
-                <span>Timeline: <b>Past ➔ Live Now</b></span>
-                <span>📡 Sensor: <b>ESP32 Active Sniffer</b></span>
-                <span>Simple Rule: <b>Green line at bottom = Cleanest Wi-Fi!</b></span>
+                <span>📡 Hardware: <b>ESP32 Sniffer Online</b></span>
+                <span>📻 Channels: <b>2.412 - 2.462 GHz (Hostel Band)</b></span>
+                <span>⚡ Status: <b>Lane 11 Optimal</b></span>
             </div>
         </div>
 
@@ -981,54 +976,49 @@
         // 📡 LIVE MULTI-CHANNEL RF SPECTRUM CHART (ESP32 RADAR)
         // ========================================================
         let currentChartMode = 'line';
+        let lastStatsData = null;
         const ctx = document.getElementById('spectrumChart').getContext('2d');
         
-        // Rolling labels with NO confusing numbers! (All empty strings, ticks hidden)
-        const emptyLabels = new Array(20).fill('');
-
         let spectrumChart = new Chart(ctx, {
             type: 'line',
             data: {
-                labels: emptyLabels,
+                labels: new Array(25).fill(''),
                 datasets: [
                     {
                         label: 'Lane 11 (Cleanest 🏎️)',
-                        data: new Array(20).fill(0),
+                        data: new Array(25).fill(0),
                         borderColor: '#10b981',
                         backgroundColor: 'rgba(16, 185, 129, 0.12)',
                         fill: true,
                         tension: 0.4,
                         borderWidth: 2.5,
-                        pointRadius: (ctx) => (ctx.dataIndex === 19 ? 5 : 0),
-                        pointBackgroundColor: '#10b981'
+                        pointRadius: 0
                     },
                     {
                         label: 'Lane 1 (Moderate 🚗)',
-                        data: new Array(20).fill(2),
+                        data: new Array(25).fill(2),
                         borderColor: '#f59e0b',
                         backgroundColor: 'transparent',
                         tension: 0.4,
                         borderWidth: 2,
-                        pointRadius: (ctx) => (ctx.dataIndex === 19 ? 5 : 0),
-                        pointBackgroundColor: '#f59e0b'
+                        pointRadius: 0
                     },
                     {
                         label: 'Lane 6 (Jammed 🛑)',
-                        data: new Array(20).fill(3),
+                        data: new Array(25).fill(3),
                         borderColor: '#ef4444',
                         backgroundColor: 'rgba(239, 68, 68, 0.08)',
                         fill: true,
                         tension: 0.4,
                         borderWidth: 2,
-                        pointRadius: (ctx) => (ctx.dataIndex === 19 ? 5 : 0),
-                        pointBackgroundColor: '#ef4444'
+                        pointRadius: 0
                     }
                 ]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                animation: { duration: 600, easing: 'easeInOutQuad' },
+                animation: { duration: 500, easing: 'easeInOutQuad' },
                 scales: {
                     y: {
                         beginAtZero: true,
@@ -1041,7 +1031,7 @@
                         grid: { color: 'rgba(255, 255, 255, 0.05)' }
                     },
                     x: {
-                        ticks: { display: false }, // Completely removes confusing numbers!
+                        ticks: { display: false },
                         grid: { display: false }
                     }
                 },
@@ -1071,48 +1061,47 @@
             
             spectrumChart.destroy();
             if (mode === 'line') {
+                const hist = (lastStatsData && lastStatsData.spectrum_history) ? lastStatsData.spectrum_history : [];
+                const len = hist.length || 25;
                 spectrumChart = new Chart(ctx, {
                     type: 'line',
                     data: {
-                        labels: emptyLabels,
+                        labels: new Array(len).fill(''),
                         datasets: [
                             {
                                 label: 'Lane 11 (Cleanest 🏎️)',
-                                data: new Array(20).fill(0),
+                                data: hist.map(h => h.ch11 !== undefined ? h.ch11 : 0),
                                 borderColor: '#10b981',
                                 backgroundColor: 'rgba(16, 185, 129, 0.12)',
                                 fill: true,
                                 tension: 0.4,
                                 borderWidth: 2.5,
-                                pointRadius: (ctx) => (ctx.dataIndex === 19 ? 5 : 0),
-                                pointBackgroundColor: '#10b981'
+                                pointRadius: 0
                             },
                             {
                                 label: 'Lane 1 (Moderate 🚗)',
-                                data: new Array(20).fill(0),
+                                data: hist.map(h => h.ch1 !== undefined ? h.ch1 : 0),
                                 borderColor: '#f59e0b',
                                 tension: 0.4,
                                 borderWidth: 2,
-                                pointRadius: (ctx) => (ctx.dataIndex === 19 ? 5 : 0),
-                                pointBackgroundColor: '#f59e0b'
+                                pointRadius: 0
                             },
                             {
                                 label: 'Lane 6 (Jammed 🛑)',
-                                data: new Array(20).fill(0),
+                                data: hist.map(h => h.ch6 !== undefined ? h.ch6 : 0),
                                 borderColor: '#ef4444',
                                 backgroundColor: 'rgba(239, 68, 68, 0.08)',
                                 fill: true,
                                 tension: 0.4,
                                 borderWidth: 2,
-                                pointRadius: (ctx) => (ctx.dataIndex === 19 ? 5 : 0),
-                                pointBackgroundColor: '#ef4444'
+                                pointRadius: 0
                             }
                         ]
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        animation: { duration: 600, easing: 'easeInOutQuad' },
+                        animation: { duration: 500, easing: 'easeInOutQuad' },
                         scales: {
                             y: {
                                 beginAtZero: true,
@@ -1125,7 +1114,7 @@
                                 grid: { color: 'rgba(255, 255, 255, 0.05)' }
                             },
                             x: {
-                                ticks: { display: false }, // Completely removes confusing numbers!
+                                ticks: { display: false },
                                 grid: { display: false }
                             }
                         },
@@ -1139,13 +1128,16 @@
                     }
                 });
             } else {
+                const c1 = lastStatsData ? (lastStatsData.ch1 || 0) : 0;
+                const c6 = lastStatsData ? (lastStatsData.ch6 || 0) : 0;
+                const c11 = lastStatsData ? (lastStatsData.ch11 || 0) : 0;
                 spectrumChart = new Chart(ctx, {
                     type: 'bar',
                     data: {
                         labels: ['Lane 1 (Ch 1)', 'Lane 6 (Ch 6)', 'Lane 11 (Ch 11)'],
                         datasets: [{
                             label: 'Active Routers Competing',
-                            data: [0, 0, 0],
+                            data: [c1, c6, c11],
                             backgroundColor: ['#f59e0b', '#ef4444', '#10b981'],
                             borderRadius: 8
                         }]
@@ -1153,7 +1145,7 @@
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        animation: { duration: 500 },
+                        animation: { duration: 400 },
                         scales: {
                             y: {
                                 beginAtZero: true,
@@ -1172,7 +1164,6 @@
                     }
                 });
             }
-            fetchStats();
         }
 
         // ========================================================
@@ -1338,10 +1329,15 @@
                     }
                 }
 
-                // 10. Update Live Multi-Channel Spectrum (Moving Left to Right)
+                lastStatsData = data;
+
+                // 10. Update Live Multi-Channel Spectrum
                 if (currentChartMode === 'line') {
                     if (data.spectrum_history && data.spectrum_history.length > 0) {
                         const hist = data.spectrum_history;
+                        if (spectrumChart.data.labels.length !== hist.length) {
+                            spectrumChart.data.labels = new Array(hist.length).fill('');
+                        }
                         spectrumChart.data.datasets[0].data = hist.map(h => h.ch11 !== undefined ? h.ch11 : 0);
                         spectrumChart.data.datasets[1].data = hist.map(h => h.ch1 !== undefined ? h.ch1 : 0);
                         spectrumChart.data.datasets[2].data = hist.map(h => h.ch6 !== undefined ? h.ch6 : 0);
