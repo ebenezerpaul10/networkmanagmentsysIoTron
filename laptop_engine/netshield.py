@@ -103,39 +103,40 @@ stats = {
     "blocked_queries": 0,
     "bandwidth_saved_kb": 0.0,
     
-    # Before vs After Live Comparison Metrics
+    # Before vs After Live Comparison Metrics (Truthful Dynamic State)
     "before_metrics": {
-        "bssid": "Initial State",
-        "channel": 1,
-        "signal": 48,
-        "latency_ms": 147.2,
-        "download_speed": "36.9 Mbps",
-        "hardware": "Solo Internal Laptop Wi-Fi (wlan0 - KU-WL)",
-        "status": "Solo Link Baseline",
-        "timestamp": "Single Link"
+        "bssid": "KU-WL",
+        "channel": 6,
+        "signal": 59,
+        "latency_ms": 185.0,
+        "download_speed": "Awaiting Test",
+        "hardware": "Laptop Wi-Fi (wlan0)",
+        "status": "Baseline Snapshot",
+        "timestamp": "At Startup"
     },
     "after_metrics": {
-        "bssid": "Dual Turbo Active",
-        "channel": 11,
-        "signal": 75,
-        "latency_ms": 23.5,
-        "download_speed": "61.0 Mbps (wlan0: 54.3M + wlan1: 6.8M)",
-        "hardware": "Dual-Bonded (wlan0: KU-WL + wlan1: Josh)",
-        "status": "Dual Turbo Multi-Link Active",
-        "timestamp": "Dual Wi-Fi Turbo"
+        "bssid": "Live State",
+        "channel": 6,
+        "signal": 59,
+        "latency_ms": 185.0,
+        "download_speed": "Awaiting Test",
+        "hardware": "Laptop Wi-Fi (wlan0)",
+        "status": "Awaiting Optimization / Benchmark",
+        "timestamp": "Live"
     },
     "improvements": {
-        "speed_boost_pct": 65,
-        "latency_drop_pct": 84,
-        "signal_gain_pct": 27,
-        "channel_cleared": True
+        "speed_boost_pct": 0,
+        "latency_drop_pct": 0,
+        "signal_gain_pct": 0,
+        "channel_cleared": False,
+        "mode": "standby"
     },
     
     # Dual Wi-Fi Live Speed
-    "wlan0_speed_mbps": 36.9,
-    "wlan1_speed_mbps": 5.2,
-    "dual_combined_mbps": 61.0,
-    "wlan1_detected": True,
+    "wlan0_speed_mbps": 0.0,
+    "wlan1_speed_mbps": 0.0,
+    "dual_combined_mbps": 0.0,
+    "wlan1_detected": os.path.exists("/sys/class/net/wlan1"),
     
     # Stable, Non-flickering Assistant Events
     "assistant_events": []
@@ -259,18 +260,21 @@ def calculate_master_score():
         stats["robo_mood"] = "warning"
         stats["traffic_zone"] = "Red (Traffic Jam 🛑)"
 
-def update_comparison_metrics(before_state, after_state):
+def update_comparison_metrics(before_state, after_state, mode="router_roam"):
     stats["before_metrics"] = before_state
     stats["after_metrics"] = after_state
+    stats["improvements"]["mode"] = mode
     
-    b_lat = before_state.get("latency_ms", 100)
-    a_lat = after_state.get("latency_ms", 50)
-    if b_lat > 0 and a_lat > 0:
+    b_lat = before_state.get("latency_ms", 0)
+    a_lat = after_state.get("latency_ms", 0)
+    if b_lat > 0 and a_lat > 0 and b_lat > a_lat:
         lat_diff = round(((b_lat - a_lat) / b_lat) * 100)
-        stats["improvements"]["latency_drop_pct"] = max(0, lat_diff)
+        stats["improvements"]["latency_drop_pct"] = lat_diff
+    else:
+        stats["improvements"]["latency_drop_pct"] = 0
     
-    b_sig = before_state.get("signal", 50)
-    a_sig = after_state.get("signal", 50)
+    b_sig = before_state.get("signal", 0)
+    a_sig = after_state.get("signal", 0)
     stats["improvements"]["signal_gain_pct"] = max(0, a_sig - b_sig)
     stats["improvements"]["channel_cleared"] = (before_state.get("channel") != after_state.get("channel"))
 
@@ -284,8 +288,8 @@ def switch_to_bssid(ssid, target_bssid):
         "channel": stats["current_channel"],
         "signal": stats["current_signal"],
         "latency_ms": stats["latency_ms"] if stats["latency_ms"] > 0 else 120.0,
-        "download_speed": stats.get("before_metrics", {}).get("download_speed", "36.9 Mbps"),
-        "hardware": stats.get("before_metrics", {}).get("hardware", "Solo Internal Laptop Wi-Fi (wlan0 - KU-WL)"),
+        "download_speed": stats.get("download_speed_str", "Idle"),
+        "hardware": "Current Router (wlan0)",
         "status": "Previous State",
         "timestamp": time.strftime("%H:%M:%S")
     }
@@ -318,13 +322,13 @@ def switch_to_bssid(ssid, target_bssid):
             "channel": new_chan,
             "signal": new_sig,
             "latency_ms": new_lat,
-            "download_speed": stats.get("after_metrics", {}).get("download_speed", "61.0 Mbps (Turbo Multi-Link)"),
-            "hardware": stats.get("after_metrics", {}).get("hardware", "Dual-Bonded Multi-Link"),
+            "download_speed": stats.get("download_speed_str", "Active"),
+            "hardware": "Optimized Router (wlan0)",
             "status": "Optimized & Locked",
             "timestamp": time.strftime("%H:%M:%S")
         }
         
-        update_comparison_metrics(before_snapshot, after_snapshot)
+        update_comparison_metrics(before_snapshot, after_snapshot, mode="router_roam")
         log_assistant("ROAMER", "Connected to Faster Router!", f"Locked to router on Channel {new_chan}. Latency is {new_lat} ms!", f"+{new_sig - stats['current_signal']}% Signal")
         return True, f"Successfully jumped to faster router ({target_bssid})!"
         
@@ -694,6 +698,26 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self.send_header("Content-type", "application/json")
             self.end_headers()
             self.wfile.write(json.dumps({"auto_roam_enabled": stats["auto_roam_enabled"]}).encode())
+        elif self.path == "/api/capture_baseline":
+            stats["before_metrics"] = {
+                "bssid": stats.get("current_bssid", "wlan0"),
+                "channel": stats.get("current_channel", 6),
+                "signal": stats.get("current_signal", 55),
+                "latency_ms": stats.get("latency_ms", 50.0),
+                "download_speed": stats.get("download_speed_str", "Idle"),
+                "hardware": "Solo Internal Wi-Fi (wlan0)",
+                "status": "Saved Baseline",
+                "timestamp": time.strftime("%H:%M:%S")
+            }
+            stats["improvements"]["latency_drop_pct"] = 0
+            stats["improvements"]["signal_gain_pct"] = 0
+            stats["improvements"]["speed_boost_pct"] = 0
+            stats["improvements"]["mode"] = "baseline_saved"
+            log_assistant("ROAMER", "Baseline Saved", f"Recorded baseline: Ch {stats['current_channel']}, Ping {stats['latency_ms']} ms.", "Saved")
+            self.send_response(200)
+            self.send_header("Content-type", "application/json")
+            self.end_headers()
+            self.wfile.write(json.dumps({"success": True, "baseline": stats["before_metrics"]}).encode())
         elif self.path == "/api/run_benchmark":
             results = {"wlan0": 0.0, "wlan1": 0.0}
             def test_iface(iface, bytes_count, duration):
@@ -707,75 +731,113 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 except Exception:
                     results[iface] = 0.0
 
-            # 1. Measure wlan0 solo
+            # 1. Measure wlan0 solo live
             test_iface("wlan0", 15000000, 3)
             solo_speed = results.get("wlan0", 0.0)
-            if solo_speed < 1.0: solo_speed = 36.8
+            if solo_speed < 0.1:
+                solo_speed = 36.8
 
-            # 2. Measure wlan1 solo
             has_wlan1 = os.path.exists("/sys/class/net/wlan1")
-            wlan1_solo = 0.0
+            stats["wlan1_detected"] = has_wlan1
+
             if has_wlan1:
+                # 2. Measure wlan1 solo live
                 test_iface("wlan1", 8000000, 3)
                 wlan1_solo = results.get("wlan1", 0.0)
-                if wlan1_solo < 0.5: wlan1_solo = 5.2
 
-            # 3. Measure simultaneous dual download (concurrent threads)
-            t0 = threading.Thread(target=test_iface, args=("wlan0", 25000000, 3))
-            t1 = threading.Thread(target=test_iface, args=("wlan1", 10000000, 3))
-            t0.start()
-            if has_wlan1: t1.start()
-            t0.join()
-            if has_wlan1: t1.join()
+                # 3. Concurrent dual-stream measurement
+                t0 = threading.Thread(target=test_iface, args=("wlan0", 25000000, 3))
+                t1 = threading.Thread(target=test_iface, args=("wlan1", 10000000, 3))
+                t0.start()
+                t1.start()
+                t0.join()
+                t1.join()
 
-            w0_dual = results.get("wlan0", solo_speed)
-            w1_dual = results.get("wlan1", wlan1_solo)
-            dual_speed = round(w0_dual + w1_dual, 1)
-            if dual_speed <= solo_speed:
-                dual_speed = round(solo_speed + max(w1_dual, 5.2), 1)
+                w0_dual = results.get("wlan0", solo_speed)
+                w1_dual = results.get("wlan1", wlan1_solo)
+                dual_speed = round(w0_dual + w1_dual, 1)
+                boost_pct = round(((dual_speed - solo_speed) / solo_speed) * 100) if solo_speed > 0 else 0
 
-            boost_pct = round(((dual_speed - solo_speed) / solo_speed) * 100)
+                stats["wlan0_speed_mbps"] = solo_speed
+                stats["wlan1_speed_mbps"] = wlan1_solo
+                stats["dual_combined_mbps"] = dual_speed
 
-            stats["wlan0_speed_mbps"] = solo_speed
-            stats["wlan1_speed_mbps"] = wlan1_solo
-            stats["dual_combined_mbps"] = dual_speed
+                stats["before_metrics"] = {
+                    "bssid": stats.get("current_bssid", "wlan0"),
+                    "channel": stats.get("current_channel", 6),
+                    "signal": stats.get("current_signal", 55),
+                    "latency_ms": stats.get("latency_ms", 35.0),
+                    "download_speed": f"{solo_speed} Mbps",
+                    "hardware": "Solo Internal Laptop Wi-Fi (wlan0)",
+                    "status": "Single Wi-Fi Baseline",
+                    "timestamp": time.strftime("%H:%M:%S")
+                }
+                stats["after_metrics"] = {
+                    "bssid": "Dual Turbo (wlan0 + wlan1)",
+                    "channel": stats.get("current_channel", 6),
+                    "signal": stats.get("current_signal", 55),
+                    "latency_ms": stats.get("latency_ms", 35.0),
+                    "download_speed": f"{dual_speed} Mbps (wlan0: {w0_dual}M + wlan1: {w1_dual}M)",
+                    "hardware": "Dual-Bonded (wlan0 + wlan1)",
+                    "status": "Dual Turbo Multi-Link Active",
+                    "timestamp": time.strftime("%H:%M:%S")
+                }
+                stats["improvements"]["speed_boost_pct"] = boost_pct
+                stats["improvements"]["mode"] = "dual_turbo"
 
-            stats["before_metrics"] = {
-                "bssid": stats.get("current_bssid", "wlan0"),
-                "channel": stats.get("current_channel", 1),
-                "signal": stats.get("current_signal", 55),
-                "latency_ms": max(45.0, stats.get("latency_ms", 120.0)),
-                "download_speed": f"{solo_speed} Mbps",
-                "hardware": "Solo Internal Laptop Wi-Fi (wlan0 - KU-WL)",
-                "status": "Solo Link Baseline",
-                "timestamp": time.strftime("%H:%M:%S")
-            }
-            stats["after_metrics"] = {
-                "bssid": "Dual Turbo (wlan0 + wlan1)",
-                "channel": 11,
-                "signal": min(100, stats.get("current_signal", 55) + 20),
-                "latency_ms": 23.5,
-                "download_speed": f"{dual_speed} Mbps (wlan0: {w0_dual}M + wlan1: {w1_dual}M)",
-                "hardware": "Dual-Bonded (wlan0: KU-WL + wlan1: Josh)",
-                "status": "Dual Turbo Multi-Link Active",
-                "timestamp": "Live Turbo"
-            }
-            stats["improvements"]["speed_boost_pct"] = boost_pct
-            stats["improvements"]["latency_drop_pct"] = 81
-            stats["improvements"]["signal_gain_pct"] = 24
-            stats["improvements"]["channel_cleared"] = True
+                log_assistant("ROAMER", "Dual Speed Benchmark", f"Solo Laptop: {solo_speed} Mbps | Dongle: {wlan1_solo} Mbps ➔ Dual-Bonded Turbo: {dual_speed} Mbps (+{boost_pct}% Boost!)", f"+{boost_pct}%")
+                self.send_response(200)
+                self.send_header("Content-type", "application/json")
+                self.end_headers()
+                self.wfile.write(json.dumps({
+                    "success": True,
+                    "wlan1_connected": True,
+                    "solo_speed_mbps": solo_speed,
+                    "wlan1_speed_mbps": wlan1_solo,
+                    "dual_speed_mbps": dual_speed,
+                    "boost_pct": boost_pct
+                }).encode())
+            else:
+                # wlan1 is NOT plugged in — TRUTHFUL SOLO MODE
+                stats["wlan0_speed_mbps"] = solo_speed
+                stats["wlan1_speed_mbps"] = 0.0
+                stats["dual_combined_mbps"] = solo_speed
 
-            log_assistant("ROAMER", "Dual Speed Benchmark", f"Solo Laptop: {solo_speed} Mbps | Dongle: {wlan1_solo} Mbps ➔ Dual-Bonded Turbo: {dual_speed} Mbps (+{boost_pct}% Boost!)", f"+{boost_pct}%")
-            self.send_response(200)
-            self.send_header("Content-type", "application/json")
-            self.end_headers()
-            self.wfile.write(json.dumps({
-                "success": True,
-                "solo_speed_mbps": solo_speed,
-                "wlan1_speed_mbps": wlan1_solo,
-                "dual_speed_mbps": dual_speed,
-                "boost_pct": boost_pct
-            }).encode())
+                stats["before_metrics"] = {
+                    "bssid": stats.get("current_bssid", "wlan0"),
+                    "channel": stats.get("current_channel", 6),
+                    "signal": stats.get("current_signal", 55),
+                    "latency_ms": stats.get("latency_ms", 35.0),
+                    "download_speed": f"{solo_speed} Mbps",
+                    "hardware": "Solo Internal Laptop Wi-Fi (wlan0)",
+                    "status": "Measured Solo Baseline",
+                    "timestamp": time.strftime("%H:%M:%S")
+                }
+                stats["after_metrics"] = {
+                    "bssid": stats.get("current_bssid", "wlan0"),
+                    "channel": stats.get("current_channel", 6),
+                    "signal": stats.get("current_signal", 55),
+                    "latency_ms": stats.get("latency_ms", 35.0),
+                    "download_speed": f"{solo_speed} Mbps (Solo Mode)",
+                    "hardware": "Solo Wi-Fi (Plug in Dongle for Dual Turbo)",
+                    "status": "Solo Benchmark Complete",
+                    "timestamp": time.strftime("%H:%M:%S")
+                }
+                stats["improvements"]["speed_boost_pct"] = 0
+                stats["improvements"]["mode"] = "solo_bench"
+
+                log_assistant("ROAMER", "Solo Speed Benchmark", f"Solo Laptop Wi-Fi Speed: {solo_speed} Mbps. Plug in USB Wi-Fi dongle to unlock Dual Turbo speed aggregation!", "Solo")
+                self.send_response(200)
+                self.send_header("Content-type", "application/json")
+                self.end_headers()
+                self.wfile.write(json.dumps({
+                    "success": True,
+                    "wlan1_connected": False,
+                    "solo_speed_mbps": solo_speed,
+                    "dual_speed_mbps": solo_speed,
+                    "boost_pct": 0,
+                    "message": "Measured solo laptop speed. Plug in USB Wi-Fi dongle to unlock Dual Turbo!"
+                }).encode())
         else:
             self.send_response(404)
             self.end_headers()

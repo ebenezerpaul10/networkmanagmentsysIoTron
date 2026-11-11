@@ -805,16 +805,17 @@
     </div>
 
     <!-- BEFORE vs AFTER LIVE IMPACT MATRIX -->
+    <!-- BEFORE vs AFTER LIVE IMPACT MATRIX (TRUTHFUL HARDWARE-AWARE BENCHMARK) -->
     <div class="comparison-section">
         <div class="section-header">
             <div>
                 <h3>⚡ Live Optimization Proof: Before vs After</h3>
-                <p>Real-time side-by-side benchmark comparing Solo Laptop Wi-Fi vs Dual-Bonded Turbo Wi-Fi.</p>
+                <p id="comp-mode-desc">Real-time side-by-side benchmark comparing baseline vs optimized network state.</p>
             </div>
             <div class="delta-pills">
-                <span class="pill green" id="pill-speed-gain">🚀 Speed: +97% Turbo Boost</span>
-                <span class="pill cyan" id="pill-lat-drop">🔻 Latency: -81% Drop</span>
-                <span class="pill green" id="pill-sig-gain">📶 Signal: +24% Boost</span>
+                <span class="pill green" id="pill-speed-gain">🚀 Speed: Live</span>
+                <span class="pill cyan" id="pill-lat-drop">🔻 Latency: Live</span>
+                <span class="pill green" id="pill-sig-gain">📶 Signal: Live</span>
                 <button class="btn btn-outline" style="padding: 4px 12px; font-size: 11px; margin-left: 6px;" onclick="runSpeedBenchmark()">⚡ Run Benchmark</button>
             </div>
         </div>
@@ -822,85 +823,90 @@
         <div class="comparison-grid">
             <div class="comp-card before">
                 <div class="comp-title" style="color: var(--neon-red);">
-                    <span>🐢 Solo Laptop Wi-Fi (Before)</span>
+                    <span id="before-card-title">🐢 Baseline State (Before)</span>
                     <span id="before-time" style="font-size:11px; color:var(--text-dim);">Single Link</span>
                 </div>
                 
                 <div class="comp-metric">
                     <div class="comp-label">
-                        <span>⚡ Download Speed (Solo Internal Wi-Fi)</span>
-                        <b id="before-speed-val" style="color: var(--neon-amber);">29.8 Mbps</b>
+                        <span id="before-speed-label">⚡ Download Speed</span>
+                        <b id="before-speed-val" style="color: var(--neon-amber);">--</b>
                     </div>
                     <div class="comp-bar-container">
-                        <div class="comp-bar" id="before-speed-bar" style="width: 50%; background: var(--neon-amber);"></div>
+                        <div class="comp-bar" id="before-speed-bar" style="width: 40%; background: var(--neon-amber);"></div>
                     </div>
                 </div>
 
                 <div class="comp-metric">
                     <div class="comp-label">
-                        <span>Ping Latency (Congested)</span>
-                        <b id="before-lat-val" style="color: var(--neon-red);">147.2 ms</b>
+                        <span>Ping Latency</span>
+                        <b id="before-lat-val" style="color: var(--neon-red);">-- ms</b>
                     </div>
                     <div class="comp-bar-container">
-                        <div class="comp-bar" id="before-lat-bar" style="width: 85%; background: var(--neon-red);"></div>
+                        <div class="comp-bar" id="before-lat-bar" style="width: 50%; background: var(--neon-red);"></div>
                     </div>
                 </div>
 
                 <div class="comp-metric">
                     <div class="comp-label">
                         <span>Signal Power</span>
-                        <b id="before-sig-val" style="color: var(--neon-amber);">48%</b>
+                        <b id="before-sig-val" style="color: var(--neon-amber);">--%</b>
                     </div>
                     <div class="comp-bar-container">
-                        <div class="comp-bar" id="before-sig-bar" style="width: 48%; background: var(--neon-amber);"></div>
+                        <div class="comp-bar" id="before-sig-bar" style="width: 50%; background: var(--neon-amber);"></div>
                     </div>
                 </div>
 
                 <div style="font-size: 12px; color: var(--text-dim); margin-top: 10px;">
-                    Hardware: <span id="before-hardware" style="color:#fff;">Solo Laptop Wi-Fi (wlan0)</span> | Route: <span id="before-chan" style="color:var(--neon-amber);">Single Channel 1</span>
+                    Hardware: <span id="before-hardware" style="color:#fff;">Solo Laptop Wi-Fi (wlan0)</span> | Channel: <span id="before-chan" style="color:var(--neon-amber);">Ch --</span>
                 </div>
             </div>
 
             <div class="comp-card after">
                 <div class="comp-title" style="color: var(--neon-green);">
-                    <span>🚀 Dual-Bonded Turbo (After)</span>
-                    <span id="after-time" style="font-size:11px; color:var(--text-dim);">Dual Wi-Fi</span>
+                    <span id="after-card-title">🚀 Optimized State (After)</span>
+                    <span id="after-time" style="font-size:11px; color:var(--text-dim);">Live</span>
                 </div>
 
                 <div class="comp-metric">
                     <div class="comp-label">
-                        <span>🚀 Download Speed (Dual-Bonded Turbo)</span>
-                        <b id="after-speed-val" style="color: var(--neon-green);">58.6 Mbps (2x Faster!)</b>
+                        <span id="after-speed-label">🚀 Download Speed</span>
+                        <b id="after-speed-val" style="color: var(--neon-green);">--</b>
                     </div>
                     <div class="comp-bar-container">
-                        <div class="comp-bar" id="after-speed-bar" style="width: 98%; background: linear-gradient(90deg, #10b981, #00f2fe);"></div>
+                        <div class="comp-bar" id="after-speed-bar" style="width: 60%; background: linear-gradient(90deg, #10b981, #00f2fe);"></div>
                     </div>
                 </div>
 
                 <div class="comp-metric">
                     <div class="comp-label">
-                        <span>Ping Latency (Instant Handshake)</span>
-                        <b id="after-lat-val" style="color: var(--neon-green);">23.5 ms</b>
+                        <span>Ping Latency</span>
+                        <b id="after-lat-val" style="color: var(--neon-green);">-- ms</b>
                     </div>
                     <div class="comp-bar-container">
-                        <div class="comp-bar" id="after-lat-bar" style="width: 20%; background: var(--neon-green);"></div>
+                        <div class="comp-bar" id="after-lat-bar" style="width: 25%; background: var(--neon-green);"></div>
                     </div>
                 </div>
 
                 <div class="comp-metric">
                     <div class="comp-label">
                         <span>Signal Power</span>
-                        <b id="after-sig-val" style="color: var(--neon-green);">72%</b>
+                        <b id="after-sig-val" style="color: var(--neon-green);">--%</b>
                     </div>
                     <div class="comp-bar-container">
-                        <div class="comp-bar" id="after-sig-bar" style="width: 72%; background: var(--neon-green);"></div>
+                        <div class="comp-bar" id="after-sig-bar" style="width: 60%; background: var(--neon-green);"></div>
                     </div>
                 </div>
 
                 <div style="font-size: 12px; color: var(--text-dim); margin-top: 10px;">
-                    Hardware: <span id="after-hardware" style="color:var(--neon-green);">wlan0 (Internal) + wlan1 (USB Dongle)</span> | Route: <span id="after-chan" style="color:var(--neon-green);">Multi-Link Bonded</span>
+                    Hardware: <span id="after-hardware" style="color:var(--neon-green);">--</span> | Route: <span id="after-chan" style="color:var(--neon-green);">--</span>
                 </div>
             </div>
+        </div>
+
+        <div id="comp-dongle-hint" style="margin-top: 14px; font-size: 12px; padding: 10px 14px; border-radius: 10px; background: rgba(0, 242, 254, 0.05); border: 1px dashed rgba(0, 242, 254, 0.2); display: flex; align-items: center; justify-content: space-between;">
+            <span id="comp-hint-text">💡 Dongle Standby: Currently in Solo Wi-Fi mode. Plug in USB Wi-Fi dongle to unlock Dual-Bonded Turbo mode!</span>
+            <span id="comp-hint-badge" class="badge offline" style="font-size: 10px; padding: 3px 8px;">Dongle Offline</span>
         </div>
     </div>
 
@@ -1352,45 +1358,83 @@
                     autoBtn.textContent = '🔄 Auto-Pilot: OFF';
                 }
 
-                // 9. Before vs After Live Speed & Metrics
+                // 9. Before vs After Live Speed & Metrics (Hardware-Aware Dynamic Mapping)
                 if (data.before_metrics && data.after_metrics) {
                     const b = data.before_metrics;
                     const a = data.after_metrics;
+                    const isDual = data.wlan1_detected;
                     
-                    document.getElementById('before-time').textContent = b.timestamp || 'Single Link';
-                    if (document.getElementById('before-speed-val')) {
-                        document.getElementById('before-speed-val').textContent = b.download_speed || '29.8 Mbps';
-                        document.getElementById('before-speed-bar').style.width = '50%';
+                    const beforeTitle = document.getElementById('before-card-title');
+                    const afterTitle = document.getElementById('after-card-title');
+                    const modeDesc = document.getElementById('comp-mode-desc');
+                    const hintText = document.getElementById('comp-hint-text');
+                    const hintBadge = document.getElementById('comp-hint-badge');
+                    
+                    if (isDual) {
+                        if (beforeTitle) beforeTitle.textContent = "🐢 Solo Laptop Wi-Fi (Before)";
+                        if (afterTitle) afterTitle.textContent = "🚀 Dual-Bonded Turbo (After)";
+                        if (modeDesc) modeDesc.textContent = "Dual Wi-Fi Turbo active: Real-time aggregation of wlan0 and wlan1.";
+                        if (hintText) hintText.innerHTML = "⚡ <b>Dual-Bonded Turbo Active:</b> Internal Wi-Fi (wlan0) + External Dongle (wlan1) are online. Click 'Run Benchmark' to measure combined speed!";
+                        if (hintBadge) {
+                            hintBadge.className = "badge online";
+                            hintBadge.textContent = "Dual Wi-Fi Online";
+                        }
+                    } else {
+                        if (beforeTitle) beforeTitle.textContent = "🐢 Baseline Router State (Before)";
+                        if (afterTitle) afterTitle.textContent = "🚀 Live / Boosted State (After)";
+                        if (modeDesc) modeDesc.textContent = "Wi-Fi Router Optimization: Compares initial baseline router vs cleaner boosted router.";
+                        if (hintText) hintText.innerHTML = "💡 <b>Solo Wi-Fi Mode:</b> External USB dongle is unplugged. Click 'Boost Internet' to hop to cleaner router. Plug in USB dongle for Dual Turbo!";
+                        if (hintBadge) {
+                            hintBadge.className = "badge offline";
+                            hintBadge.textContent = "Dongle Unplugged";
+                        }
                     }
-                    document.getElementById('before-lat-val').textContent = b.latency_ms + ' ms';
-                    document.getElementById('before-lat-bar').style.width = Math.min(100, Math.max(15, b.latency_ms / 2)) + '%';
-                    document.getElementById('before-sig-val').textContent = b.signal + '%';
-                    document.getElementById('before-sig-bar').style.width = b.signal + '%';
-                    if (document.getElementById('before-hardware')) {
-                        document.getElementById('before-hardware').textContent = b.hardware || 'Solo Laptop (wlan0)';
-                    }
-                    document.getElementById('before-chan').textContent = 'Single Channel ' + (b.channel || '1');
 
-                    document.getElementById('after-time').textContent = a.timestamp || 'Dual Wi-Fi';
+                    document.getElementById('before-time').textContent = b.timestamp || 'At Startup';
+                    if (document.getElementById('before-speed-val')) {
+                        document.getElementById('before-speed-val').textContent = b.download_speed || 'Idle';
+                    }
+                    document.getElementById('before-lat-val').textContent = (b.latency_ms || 0) + ' ms';
+                    document.getElementById('before-lat-bar').style.width = Math.min(100, Math.max(15, (b.latency_ms || 50) / 2)) + '%';
+                    document.getElementById('before-sig-val').textContent = (b.signal || 0) + '%';
+                    document.getElementById('before-sig-bar').style.width = (b.signal || 0) + '%';
+                    if (document.getElementById('before-hardware')) {
+                        document.getElementById('before-hardware').textContent = b.hardware || 'Laptop Wi-Fi (wlan0)';
+                    }
+                    document.getElementById('before-chan').textContent = 'Ch ' + (b.channel || '1');
+
+                    document.getElementById('after-time').textContent = a.timestamp || 'Live';
                     if (document.getElementById('after-speed-val')) {
-                        document.getElementById('after-speed-val').textContent = a.download_speed || '58.6 Mbps (2x Faster!)';
-                        document.getElementById('after-speed-bar').style.width = '98%';
+                        document.getElementById('after-speed-val').textContent = a.download_speed || 'Live';
                     }
-                    document.getElementById('after-lat-val').textContent = a.latency_ms + ' ms';
-                    document.getElementById('after-lat-bar').style.width = Math.min(100, Math.max(15, a.latency_ms / 2)) + '%';
-                    document.getElementById('after-sig-val').textContent = a.signal + '%';
-                    document.getElementById('after-sig-bar').style.width = a.signal + '%';
+                    document.getElementById('after-lat-val').textContent = (a.latency_ms || 0) + ' ms';
+                    document.getElementById('after-lat-bar').style.width = Math.min(100, Math.max(15, (a.latency_ms || 50) / 2)) + '%';
+                    document.getElementById('after-sig-val').textContent = (a.signal || 0) + '%';
+                    document.getElementById('after-sig-bar').style.width = (a.signal || 0) + '%';
                     if (document.getElementById('after-hardware')) {
-                        document.getElementById('after-hardware').textContent = a.hardware || 'wlan0 + wlan1 (Dual Bonded)';
+                        document.getElementById('after-hardware').textContent = a.hardware || 'Live Wi-Fi';
                     }
-                    document.getElementById('after-chan').textContent = 'Multi-Link Bonded';
+                    document.getElementById('after-chan').textContent = isDual ? 'Multi-Link Bonded' : ('Ch ' + (a.channel || '1'));
 
                     if (data.improvements) {
+                        const imp = data.improvements;
                         if (document.getElementById('pill-speed-gain')) {
-                            document.getElementById('pill-speed-gain').textContent = `🚀 Speed: +${data.improvements.speed_boost_pct || 97}% Turbo Boost`;
+                            if (imp.speed_boost_pct > 0) {
+                                document.getElementById('pill-speed-gain').textContent = `🚀 Speed: +${imp.speed_boost_pct}% Boost`;
+                            } else {
+                                document.getElementById('pill-speed-gain').textContent = `🚀 Speed: Live`;
+                            }
                         }
-                        document.getElementById('pill-lat-drop').textContent = `🔻 Latency: -${data.improvements.latency_drop_pct}% Drop`;
-                        document.getElementById('pill-sig-gain').textContent = `📶 Signal: +${data.improvements.signal_gain_pct}% Boost`;
+                        if (imp.latency_drop_pct > 0) {
+                            document.getElementById('pill-lat-drop').textContent = `🔻 Latency: -${imp.latency_drop_pct}% Drop`;
+                        } else {
+                            document.getElementById('pill-lat-drop').textContent = `⚡ Latency: Tracking`;
+                        }
+                        if (imp.signal_gain_pct > 0) {
+                            document.getElementById('pill-sig-gain').textContent = `📶 Signal: +${imp.signal_gain_pct}% Gain`;
+                        } else {
+                            document.getElementById('pill-sig-gain').textContent = `📶 Signal: Stable`;
+                        }
                     }
                 }
 
@@ -1498,11 +1542,15 @@
 
         async function runSpeedBenchmark() {
             try {
-                showCyberpunkToast("Benchmarking Speeds ⚡", "Measuring solo laptop Wi-Fi vs dual-interface turbo speed...", "info");
+                showCyberpunkToast("Benchmarking Speeds ⚡", "Measuring live download speed on active interfaces...", "info");
                 const res = await fetch('/api/run_benchmark', { method: 'POST' });
                 const json = await res.json();
                 if (json.success) {
-                    showCyberpunkToast("Benchmark Done! 🚀", `Solo: ${json.solo_speed_mbps} Mbps ➔ Dual Turbo: ${json.dual_speed_mbps} Mbps (+${json.boost_pct}% Boost)`, "success");
+                    if (json.wlan1_connected) {
+                        showCyberpunkToast("Dual Turbo Benchmark 🚀", `Solo: ${json.solo_speed_mbps} Mbps ➔ Dual Turbo: ${json.dual_speed_mbps} Mbps (+${json.boost_pct}% Boost)`, "success");
+                    } else {
+                        showCyberpunkToast("Solo Wi-Fi Benchmark ⚡", `Measured Solo Laptop Speed: ${json.solo_speed_mbps} Mbps (Plug in USB dongle for Dual Turbo!)`, "info");
+                    }
                 }
                 fetchStats();
             } catch (err) {
