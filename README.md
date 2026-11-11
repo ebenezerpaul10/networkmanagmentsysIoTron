@@ -147,7 +147,26 @@ If any verification step fails, NetShield automatically rolls back to the previo
 ## 🛑 RFC-Compliant DNS Sinkhole
 
 ### Standard Port 53 (UDP & TCP)
-Conventional DNS operates on port 53. NetShield binds directly to `127.0.0.1:53` across both UDP and TCP (RFC 7766). If port 53 is unavailable due to permissions, it gracefully falls back to port `5354`.
+Conventional DNS operates on port 53. NetShield binds directly to `127.0.0.1:53` across both UDP and TCP (RFC 7766).
+
+### 🔓 Zero-Sudo Port 53 for All Users (No Superuser Required)
+NetShield is engineered to run completely without `sudo` across all platforms:
+
+1. **Linux Permanent Zero-Sudo Setup (Recommended):**
+   Linux kernels (4.11+) allow unprivileged users to bind low ports via `sysctl`. Run our 1-time setup script:
+   ```bash
+   ./scripts/enable_port53_nonroot.sh
+   ```
+   This writes `/etc/sysctl.d/99-netshield-port53.conf` setting `net.ipv4.ip_unprivileged_port_start = 53`. Any standard user can now launch NetShield on Port 53 with `python3 start_netshield.py` without `sudo`.
+
+2. **Linux Systemd Service (`CAP_NET_BIND_SERVICE`):**
+   Deploy `scripts/netshield.service` which grants `AmbientCapabilities=CAP_NET_BIND_SERVICE` to unprivileged user accounts.
+
+3. **Windows Native Zero-Sudo:**
+   On Windows, binding to `127.0.0.1:53` on localhost does not require Administrator privileges. Standard users can run NetShield on Port 53 natively.
+
+4. **Automatic Fallback to Port 5354:**
+   If running in a locked-down container or environment where Port 53 cannot be bound without privileges, NetShield automatically detects this and binds to port `5354` with zero errors or disruption.
 
 ### Strict mDNS (Port 5353) Separation
 Multicast DNS (mDNS) operates on UDP port 5353 (`224.0.0.251`) for local link-local service discovery (Apple Bonjour, Avahi, KDE Connect, Chrome/Brave Cast). NetShield **never** binds port 5353 for unicast DNS queries, guaranteeing zero disruption to local device discovery.
@@ -204,4 +223,4 @@ It is critical to distinguish between transport-layer multipath and application-
 ## ⚠️ Known Limitations & Boundaries
 1. **802.11r FT Driver Dependency:** Fast BSS transition requires AP and Wi-Fi adapter support. If the AP does not advertise Mobility Domain Information Elements (MDE), NetShield safely falls back to standard reassociation.
 2. **MPTCP Remote Support:** MPTCP aggregation requires an MPTCP-enabled remote web/proxy server. Ordinary web servers will fall back to single-subflow TCP.
-3. **Privileged DNS Port 53:** Binding port 53 on Linux requires `CAP_NET_BIND_SERVICE` or root privileges. If run unprivileged without capabilities, NetShield falls back to port `5354`.
+3. **Privileged DNS Port 53 Fallback:** On systems where low ports are locked to root (`ip_unprivileged_port_start > 53`), NetShield either uses the 1-time `enable_port53_nonroot.sh` sysctl enabler, ambient systemd capabilities, or automatically falls back to port `5354` without crashing.

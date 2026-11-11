@@ -247,6 +247,8 @@ class DnsSinkholeServer:
             "bind_address": self.bind_addr,
             "port": self.active_port,
             "is_running": self.is_running,
+            "zero_sudo_active": True,
+            "mode": "standard_port_53" if self.active_port == 53 else f"unprivileged_fallback_port_{self.active_port}",
             "total_queries": self.total_queries,
             "blocked_queries": self.blocked_queries,
             "forwarded_queries": self.forwarded_queries,

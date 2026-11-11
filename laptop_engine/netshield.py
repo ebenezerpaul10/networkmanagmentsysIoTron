@@ -197,7 +197,8 @@ class NetShieldEngine:
 
         # 1. Start DNS Sinkhole (Port 53 UDP & TCP)
         if self.dns_server.start():
-            self.log_assistant("SHIELD", "DNS Sinkhole Active", f"Bound on {self.dns_server.bind_addr}:{self.dns_server.active_port} (UDP & TCP).", "Online")
+            mode_desc = "Zero-Sudo Port 53" if self.dns_server.active_port == 53 else f"Zero-Sudo Port {self.dns_server.active_port}"
+            self.log_assistant("SHIELD", "DNS Sinkhole Active", f"Bound on {self.dns_server.bind_addr}:{self.dns_server.active_port} ({mode_desc} Active).", "Online")
         else:
             self.log_assistant("SHIELD", "DNS Bind Warning", f"Could not bind port {self.dns_server.desired_port}; running without local sinkhole.", "Warning")
 

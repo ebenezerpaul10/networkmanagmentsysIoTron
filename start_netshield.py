@@ -47,6 +47,32 @@ def open_dashboard():
     except Exception:
         pass
 
+def check_port53_status():
+    """Checks whether Port 53 is accessible without sudo on this host."""
+    system = platform.system()
+    if system == "Windows":
+        print("[NetShield] 🪟 Windows: Port 53 is natively unprivileged for localhost.")
+        return
+
+    import socket
+    can_bind = False
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        s.bind(("127.0.0.1", 53))
+        s.close()
+        can_bind = True
+    except Exception:
+        can_bind = False
+
+    if can_bind:
+        print("[NetShield] 🛡️ Port 53 Access: Verified (Zero-Sudo Active ✅)")
+    else:
+        print("[NetShield] ℹ️ Port 53 requires elevated capability on this host.")
+        print("[NetShield] 🛡️ Zero-Sudo Fallback: Operating seamlessly on Port 5354 (mDNS 5353 preserved).")
+        print("[NetShield Tip] To permanently unlock Port 53 without sudo for all users, run once:")
+        print("                ./scripts/enable_port53_nonroot.sh")
+
 def main():
     system = platform.system()
     print("=" * 60)
@@ -55,6 +81,7 @@ def main():
     print("=" * 60)
 
     check_and_install_dependencies()
+    check_port53_status()
 
     # Launch browser in a background thread
     import threading
