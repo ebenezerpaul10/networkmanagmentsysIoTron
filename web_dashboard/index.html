@@ -773,7 +773,7 @@
         <div class="section-header">
             <div>
                 <h3>🛣️ Wi-Fi Traffic Lanes (The Highway Analogy)</h3>
-                <p>Wi-Fi works like a 3-lane highway. When other students crowd one lane, your net slows down. ESP32 finds the empty lane!</p>
+                <p id="highway-desc">Wi-Fi works like a 3-lane highway. When other rooms crowd one lane, your net slows down. NetShield finds the cleanest empty lane!</p>
             </div>
             <div>
                 <span class="pill green" id="pill-best-lane">🏎️ Lane 11: Empty Fast Lane</span>
@@ -913,7 +913,7 @@
             <div>
                 <div class="card-header-flex">
                     <div>
-                        <span class="card-title">📡 Live Wi-Fi Airwaves (ESP32 Radar)</span>
+                        <span class="card-title" id="radar-card-title">📡 Live Wi-Fi Airwaves (Laptop Wi-Fi Fallback)</span>
                         <div class="zone-legend">
                             <span style="color: var(--neon-green);"><span class="zone-dot" style="background:var(--neon-green);"></span>Lane 11 (Cleanest 🏎️)</span>
                             <span style="color: var(--neon-amber);"><span class="zone-dot" style="background:var(--neon-amber);"></span>Lane 1 (Moderate 🚗)</span>
@@ -934,9 +934,9 @@
             </div>
 
             <div class="radar-meta-row">
-                <span>📡 Hardware: <b>ESP32 Sniffer Online</b></span>
+                <span>📡 Source: <b id="radar-hw-name" style="color:var(--neon-amber);">Laptop Wi-Fi Card</b></span>
                 <span>📻 Channels: <b>2.412 - 2.462 GHz (Hostel Band)</b></span>
-                <span>⚡ Status: <b>Lane 11 Optimal</b></span>
+                <span>⚡ Hardware: <b id="radar-hw-status" style="color:var(--neon-amber);">Waiting for ESP32 USB</b></span>
             </div>
         </div>
 
@@ -1262,14 +1262,36 @@
                     sc.style.boxShadow = '0 0 25px rgba(239, 68, 68, 0.3)';
                 }
 
-                // 2. Hardware Status
+                // 2. Hardware Status (Accurate ESP32 vs Laptop Fallback)
                 const hwStatus = document.getElementById('hw-status');
+                const radarTitle = document.getElementById('radar-card-title');
+                const radarHwName = document.getElementById('radar-hw-name');
+                const radarHwStatus = document.getElementById('radar-hw-status');
+
                 if (data.esp_connected) {
                     hwStatus.className = 'badge online';
-                    hwStatus.textContent = '🟢 ESP32 RADAR ONLINE (' + data.esp_port + ')';
+                    hwStatus.textContent = '🟢 ESP32 HARDWARE RADAR ONLINE (' + data.esp_port + ')';
+                    if (radarTitle) radarTitle.textContent = '📡 Live Wi-Fi Airwaves (ESP32 Hardware Radar)';
+                    if (radarHwName) {
+                        radarHwName.textContent = 'ESP32 Hardware Antenna (' + data.esp_port + ')';
+                        radarHwName.style.color = 'var(--neon-green)';
+                    }
+                    if (radarHwStatus) {
+                        radarHwStatus.textContent = 'Hardware Sniffer 24/7 Active';
+                        radarHwStatus.style.color = 'var(--neon-green)';
+                    }
                 } else {
                     hwStatus.className = 'badge offline';
-                    hwStatus.textContent = '🔴 WAITING FOR ESP32 USB';
+                    hwStatus.textContent = '🔴 ESP32 DISCONNECTED (Software Scan Mode)';
+                    if (radarTitle) radarTitle.textContent = '📡 Live Wi-Fi Airwaves (Laptop Wi-Fi Fallback)';
+                    if (radarHwName) {
+                        radarHwName.textContent = 'Laptop Wi-Fi Card (Plug in ESP32 for Hardware Sniffer)';
+                        radarHwName.style.color = 'var(--neon-amber)';
+                    }
+                    if (radarHwStatus) {
+                        radarHwStatus.textContent = 'Waiting for ESP32 USB Plug-in';
+                        radarHwStatus.style.color = 'var(--neon-amber)';
+                    }
                 }
 
                 // 3. Download Speed
@@ -1300,6 +1322,12 @@
                 // 7. Highway Analogy
                 if (data.highway) {
                     const h = data.highway;
+                    const hwDesc = document.getElementById('highway-desc');
+                    if (hwDesc) {
+                        hwDesc.textContent = data.esp_connected 
+                            ? "Wi-Fi works like a 3-lane highway. Dedicated ESP32 Hardware Radar is sniffing channels 1, 6, 11 in realtime!"
+                            : "Wi-Fi works like a 3-lane highway. Scanned via Laptop Wi-Fi card (Plug in ESP32 for dedicated hardware RF radar).";
+                    }
                     document.getElementById('pill-best-lane').textContent = `🏎️ Lane ${h.best_lane}: Cleanest Lane!`;
                     document.getElementById('status-lane1').textContent = `${h.lane1.status} (${h.lane1.count} Routers)`;
                     document.getElementById('desc-lane1').textContent = h.lane1.desc;

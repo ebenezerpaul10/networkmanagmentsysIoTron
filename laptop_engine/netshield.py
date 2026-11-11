@@ -48,17 +48,18 @@ event_counter = 0
 stats = {
     # System & Hardware
     "esp_connected": False,
-    "esp_port": "None",
+    "esp_port": "Disconnected",
+    "radar_source": "Laptop Wi-Fi (Software Fallback)",
     "auto_roam_enabled": False,
     
     # 0-100 Master Internet Score
-    "health_score": 88,
-    "score_status": "Ultra Smooth 🚀",
-    "simple_summary": "Your network is flying! ESP32 radar is guarding your room.",
+    "health_score": 75,
+    "score_status": "Good & Steady ⚡",
+    "simple_summary": "Laptop Guard is active. Plug in ESP32 for 24/7 Hardware RF Radar.",
     
     # Friendly Robo-Sentry Speech (Calm, easy for a kid)
-    "robo_speech": "🌟 Everything is awesome! Your Wi-Fi is clear and ready for YouTube, games & movies.",
-    "robo_mood": "happy",
+    "robo_speech": "⚡ Your Wi-Fi is monitored via your laptop card. Plug in your ESP32 board for dedicated Hardware Radar!",
+    "robo_mood": "alert",
     
     # Active Connection on Laptop (Real-Time)
     "current_ssid": "Scanning...",
@@ -81,14 +82,7 @@ stats = {
     "total_aps": 0,
     "ch1": 0, "ch6": 0, "ch11": 0,
     # Rolling Spectrum History for All 3 Wi-Fi Channels (Lane 1, Lane 6, Lane 11)
-    "spectrum_history": [
-        {
-            "ch1": round(2.0 + math.sin(i * 0.45) * 0.35, 1),
-            "ch6": round(3.0 + math.cos(i * 0.5) * 0.4, 1),
-            "ch11": 0.0
-        }
-        for i in range(25)
-    ],
+    "spectrum_history": [{"ch1": 0.0, "ch6": 0.0, "ch11": 0.0} for _ in range(25)],
     
     # Left-to-Right Single Air Traffic Wave Buffer (20 points, 0-100%)
     "traffic_wave": [15, 20, 18, 22, 25, 20, 18, 22, 20, 24, 19, 21, 25, 20, 22, 18, 20, 22, 21, 20],
@@ -244,22 +238,23 @@ def calculate_master_score():
         
     stats["health_score"] = min(100, max(10, score))
     
-    # Friendly Kid-Simple Speech & Mood
+    # Friendly Kid-Simple Speech & Mood (Accurate hardware context)
+    radar_desc = "ESP32 Hardware Radar is sniffing 24/7." if stats.get("esp_connected") else "Laptop Guard is active (Plug in ESP32 for Hardware RF Radar)."
     if stats["health_score"] >= 80:
         stats["score_status"] = "Ultra Smooth 🚀"
-        stats["simple_summary"] = "Your network is flying! ESP32 radar is guarding your room."
-        stats["robo_speech"] = "🌟 Everything is awesome! Your Wi-Fi is super clear and ready for YouTube, 4K videos & gaming."
+        stats["simple_summary"] = f"Your network is flying! {radar_desc}"
+        stats["robo_speech"] = f"🌟 Everything is awesome! Your connection is fast and clean. {radar_desc}"
         stats["robo_mood"] = "happy"
         stats["traffic_zone"] = "Green (Clean Air 🏎️)"
     elif stats["health_score"] >= 60:
         stats["score_status"] = "Good & Steady ⚡"
-        stats["simple_summary"] = "Internet is smooth and stable with light nearby traffic."
-        stats["robo_speech"] = "⚡ Good connection! A couple of nearby rooms are online, but your connection is steady."
+        stats["simple_summary"] = f"Internet is smooth and stable. {radar_desc}"
+        stats["robo_speech"] = f"⚡ Good connection! Room latency is steady. {radar_desc}"
         stats["robo_mood"] = "alert"
         stats["traffic_zone"] = "Yellow (Busy Air 🚗)"
     else:
         stats["score_status"] = "Traffic Jam 🛑"
-        stats["simple_summary"] = "Channel is crowded with high latency. Boost recommended."
+        stats["simple_summary"] = f"Channel is crowded with high latency. Boost recommended. {radar_desc}"
         stats["robo_speech"] = "🛑 Traffic jam detected on this Wi-Fi channel! Click 'Boost Internet' to hop over to an empty channel."
         stats["robo_mood"] = "warning"
         stats["traffic_zone"] = "Red (Traffic Jam 🛑)"
@@ -462,22 +457,70 @@ def latency_worker():
         calculate_master_score()
         time.sleep(3.0)
 
+def get_channel_counts_via_nmcli():
+    """Fallback scanner using laptop's internal Wi-Fi card when ESP32 is unplugged."""
+    try:
+        out = subprocess.check_output(
+            ["nmcli", "-t", "-f", "CHAN,SSID,SIGNAL", "dev", "wifi", "list"],
+            text=True, stderr=subprocess.DEVNULL, timeout=4
+        )
+        ch1 = 0; ch6 = 0; ch11 = 0; total = 0
+        for line in out.strip().split("\n"):
+            parts = line.split(":")
+            if parts and parts[0].isdigit():
+                total += 1
+                ch = int(parts[0])
+                if ch == 1: ch1 += 1
+                elif ch == 6: ch6 += 1
+                elif ch == 11: ch11 += 1
+        return ch1, ch6, ch11, total
+    except Exception:
+        return 0, 0, 0, 0
+
 def esp_listener_worker():
-    """Reads live RF spectrum analytics from ESP32."""
+    """Reads live RF spectrum analytics from ESP32, with real laptop Wi-Fi fallback when ESP32 is disconnected."""
     global stats
     while True:
         port = auto_detect_esp()
         if not port:
             stats["esp_connected"] = False
             stats["esp_port"] = "Disconnected"
-            time.sleep(2)
+            stats["radar_source"] = "Laptop Wi-Fi (Software Fallback)"
+            
+            # Real software fallback scan via laptop Wi-Fi card
+            c1, c6, c11, total = get_channel_counts_via_nmcli()
+            stats["ch1"] = c1
+            stats["ch6"] = c6
+            stats["ch11"] = c11
+            stats["total_aps"] = total
+            
+            def get_lane_info(count):
+                if count >= 4: return "Jammed 🚗🚗🚗", f"{count} routers on channel"
+                elif count >= 2: return "Moderate 🚗", f"{count} routers on channel"
+                else: return "Empty 🏎️", f"{count} routers (clean lane)"
+                
+            s1, d1 = get_lane_info(c1)
+            s6, d6 = get_lane_info(c6)
+            s11, d11 = get_lane_info(c11)
+            
+            stats["highway"]["lane1"] = {"channel": 1, "count": c1, "status": s1, "desc": d1}
+            stats["highway"]["lane6"] = {"channel": 6, "count": c6, "status": s6, "desc": d6}
+            stats["highway"]["lane11"] = {"channel": 11, "count": c11, "status": s11, "desc": d11}
+            
+            least = min(c1, c6, c11)
+            if least == c11: stats["highway"]["best_lane"] = 11
+            elif least == c6: stats["highway"]["best_lane"] = 6
+            else: stats["highway"]["best_lane"] = 1
+            
+            time.sleep(3.5)
             continue
             
         try:
             stats["esp_port"] = port
             ser = serial.Serial(port, DEFAULT_BAUD, timeout=4)
             stats["esp_connected"] = True
-            log_assistant("RADAR", "ESP32 Radar Connected", f"Hardware antenna is sniffing room airwaves on {port}.", "Online")
+            stats["radar_source"] = f"ESP32 Hardware Antenna ({port})"
+            log_assistant("RADAR", "ESP32 Hardware Radar Connected", f"Hardware antenna is sniffing room airwaves on {port}.", "Online")
             
             while True:
                 line = ser.readline().decode("utf-8", errors="ignore").strip()
@@ -494,11 +537,10 @@ def esp_listener_worker():
                             stats["ch6"] = c6
                             stats["ch11"] = c11
                             
-                            # Highway Analogy
                             def get_lane_info(count):
-                                if count >= 4: return "Jammed 🚗🚗🚗", "Heavy interference"
-                                elif count >= 2: return "Moderate 🚗", "Medium traffic"
-                                else: return "Empty 🏎️", "Fast lane"
+                                if count >= 4: return "Jammed 🚗🚗🚗", f"{count} routers on channel"
+                                elif count >= 2: return "Moderate 🚗", f"{count} routers on channel"
+                                else: return "Empty 🏎️", f"{count} routers (clean lane)"
                                 
                             s1, d1 = get_lane_info(c1)
                             s6, d6 = get_lane_info(c6)
@@ -528,7 +570,7 @@ def spectrum_wave_streamer():
         c6 = stats.get("ch6", 0)
         c11 = stats.get("ch11", 0)
         
-        # When routers are present on that channel, add subtle RF carrier undulating wave
+        # Real RF carrier wave based on scanned counts
         v1 = max(0.0, round(c1 + (math.sin(t * 1.3) * 0.35) + random.uniform(-0.1, 0.1), 1)) if c1 > 0 else 0.0
         v6 = max(0.0, round(c6 + (math.cos(t * 1.5) * 0.4) + random.uniform(-0.15, 0.15), 1)) if c6 > 0 else 0.0
         v11 = max(0.0, round(c11 + (math.sin(t * 1.1) * 0.25) + random.uniform(-0.1, 0.1), 1)) if c11 > 0 else 0.0
@@ -545,7 +587,10 @@ def intelligent_copilot_worker():
     """Generates calm, kid-friendly assistant observations with 45s cooldown."""
     global stats
     time.sleep(4)
-    log_assistant("COPILOT", "Robo-Sentry Ready", "Hello! I am your Wi-Fi guard. I will keep your internet fast and clean.", "Ready")
+    if stats["esp_connected"]:
+        log_assistant("COPILOT", "ESP32 Radar Guarding", "Hello! ESP32 Hardware Radar is guarding your connection.", "Ready")
+    else:
+        log_assistant("COPILOT", "Laptop Guard Active", "Hello! Laptop Wi-Fi Guard is active. Plug in your ESP32 board for hardware radar.", "Ready")
     
     last_lane_advised = None
     last_advice_time = 0
@@ -562,11 +607,15 @@ def intelligent_copilot_worker():
             if best_lane != last_lane_advised or (now - last_advice_time > 60):
                 last_lane_advised = best_lane
                 last_advice_time = now
-                log_assistant("COPILOT", "Faster Lane Available", f"Channel {best_lane} is completely empty! Click 'Boost' to jump over.", "Tip")
+                src = "ESP32 Hardware Radar" if stats.get("esp_connected") else "Laptop Wi-Fi Scan"
+                log_assistant("COPILOT", "Faster Lane Available", f"Channel {best_lane} is cleaner! ({src}) Click 'Boost' to jump over.", "Tip")
         elif (now - last_advice_time > 90):
             last_advice_time = now
             total = stats["total_aps"]
-            log_assistant("RADAR", "Room Air Checked", f"I checked the air: found {total} routers. Your signal is steady.", "All Good")
+            if stats.get("esp_connected"):
+                log_assistant("RADAR", "Room Air Checked (ESP32)", f"Hardware antenna checked the air: found {total} nearby networks. Signal steady.", "All Good")
+            else:
+                log_assistant("ROAMER", "Room Air Checked (Laptop)", f"Found {total} nearby networks. Plug in ESP32 for 24/7 dedicated hardware RF sniffing.", "Info")
 
 def dns_shield_worker():
     """Local DNS Shield Server."""
