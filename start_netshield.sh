@@ -1,14 +1,19 @@
 #!/usr/bin/env bash
-# NetShield-IoT: Master One-Click Launcher
+# NetShield-IoT: macOS & Linux One-Click Launcher
 
-PROJECT_DIR="/home/octopaul/antigravity/NetShield-IoT"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 echo "=========================================================="
 echo "        🛡️  STARTING NETSHIELD-IoT SYSTEM...             "
 echo "=========================================================="
 
-# Check if browser is available and launch dashboard in 2 seconds in background
-(sleep 2 && which brave >/dev/null 2>&1 && brave http://localhost:8080 >/dev/null 2>&1 || xdg-open http://localhost:8080 >/dev/null 2>&1) &
+cd "$SCRIPT_DIR"
 
-# Run the Python Engine (DNS Shield + Serial Radar + Web Server + Terminal HUD)
-python3 "$PROJECT_DIR/laptop_engine/netshield.py"
+# Check if python3 is available
+if ! command -v python3 &>/dev/null; then
+    echo "[ERROR] python3 is not installed or not in PATH."
+    exit 1
+fi
+
+# Run via universal launcher
+python3 "$SCRIPT_DIR/start_netshield.py"

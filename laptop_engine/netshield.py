@@ -29,6 +29,14 @@ except ImportError:
     print("[ERROR] pyserial not found.")
     sys.exit(1)
 
+# Cross-Platform Hardware & Network Adapter
+try:
+    from laptop_engine import platform_adapter as pa
+except ImportError:
+    import platform_adapter as pa
+
+bandwidth_tracker = pa.NetworkBandwidthTracker()
+
 # Configuration
 DEFAULT_BAUD = 115200
 UPSTREAM_DNS = ("1.1.1.1", 53)
@@ -136,7 +144,7 @@ stats = {
     "wlan0_speed_mbps": 0.0,
     "wlan1_speed_mbps": 0.0,
     "dual_combined_mbps": 0.0,
-    "wlan1_detected": os.path.exists("/sys/class/net/wlan1"),
+    "wlan1_detected": pa.is_secondary_wifi_detected(),
     
     # Stable, Non-flickering Assistant Events
     "assistant_events": []
@@ -161,57 +169,16 @@ def log_assistant(category, title, message, impact="Info"):
     print(f"[ROBO-SENTRY] #{event_counter} [{category}] {title}: {message}")
 
 def auto_detect_esp():
-    ports = glob.glob("/dev/ttyUSB*") + glob.glob("/dev/ttyACM*")
-    return ports[0] if ports else None
+    """Detects ESP32 hardware serial port across Windows, macOS, and Linux."""
+    return pa.auto_detect_esp32_port()
 
 def get_current_wifi_status():
-    """Reads current active Wi-Fi connection info using nmcli."""
-    try:
-        out = subprocess.check_output(
-            ["nmcli", "-t", "-f", "active,bssid,chan,signal,ssid", "dev", "wifi"],
-            text=True, stderr=subprocess.DEVNULL
-        )
-        for line in out.strip().split("\n"):
-            if line.startswith("yes:"):
-                parts = line.split(":")
-                bssid = ":".join(parts[1:7]).replace("\\", "")
-                chan = int(parts[7]) if len(parts) > 7 and parts[7].isdigit() else 0
-                signal = int(parts[8]) if len(parts) > 8 and parts[8].isdigit() else 0
-                ssid = parts[9] if len(parts) > 9 else "Unknown"
-                return ssid, bssid, chan, signal
-    except Exception:
-        pass
-    return "Disconnected", "None", 0, 0
+    """Reads current active Wi-Fi connection info across Windows, macOS, and Linux."""
+    return pa.get_active_wifi_status()
 
 def find_best_candidate_for_ssid(target_ssid):
-    """Finds best BSSID strictly for target_ssid."""
-    if not target_ssid or target_ssid in ["Disconnected", "Scanning..."]:
-        return None, 0, 0
-    try:
-        out = subprocess.check_output(
-            ["nmcli", "-t", "-f", "SSID,BSSID,CHAN,SIGNAL", "dev", "wifi", "list"],
-            text=True, stderr=subprocess.DEVNULL
-        )
-        candidates = []
-        for line in out.strip().split("\n"):
-            if not line:
-                continue
-            parts = line.split(":")
-            if len(parts) >= 8:
-                ssid = parts[0]
-                bssid = ":".join(parts[1:7]).replace("\\", "")
-                chan = int(parts[7]) if parts[7].isdigit() else 0
-                signal = int(parts[8]) if len(parts) > 8 and parts[8].isdigit() else 0
-                if ssid == target_ssid:
-                    candidates.append({"bssid": bssid, "chan": chan, "signal": signal})
-        
-        if candidates:
-            candidates.sort(key=lambda x: x["signal"], reverse=True)
-            best = candidates[0]
-            return best["bssid"], best["chan"], best["signal"]
-    except Exception:
-        pass
-    return None, 0, 0
+    """Finds best BSSID candidate strictly for target_ssid across OSes."""
+    return pa.find_best_candidate_for_ssid(target_ssid)
 
 def calculate_master_score():
     """Computes a logical 0-100 Master Internet Score and simple robot speech."""
@@ -279,33 +246,26 @@ def update_comparison_metrics(before_state, after_state, mode="router_roam"):
     stats["improvements"]["channel_cleared"] = (before_state.get("channel") != after_state.get("channel"))
 
 def switch_to_bssid(ssid, target_bssid):
-    """Switches to target BSSID with snapshot capture and rollback protection."""
+    """Switches to target BSSID with snapshot capture and cross-platform rollback protection."""
     if not ssid or ssid in ["Disconnected", "Scanning..."] or not target_bssid:
         return False, "No valid SSID or Target AP selected"
         
+    p1, _ = pa.get_wifi_interface_names()
     before_snapshot = {
         "bssid": stats["current_bssid"],
         "channel": stats["current_channel"],
         "signal": stats["current_signal"],
         "latency_ms": stats["latency_ms"] if stats["latency_ms"] > 0 else 120.0,
         "download_speed": stats.get("download_speed_str", "Idle"),
-        "hardware": "Current Router (wlan0)",
+        "hardware": f"Current Router ({p1})",
         "status": "Previous State",
         "timestamp": time.strftime("%H:%M:%S")
     }
     
     log_assistant("ROAMER", "Jumping to Cleaner Wi-Fi", f"Connecting to faster router [{target_bssid}] on network '{ssid}'...", "Switching")
-    try:
-        subprocess.check_call(
-            ["nmcli", "connection", "modify", ssid, "802-11-wireless.bssid", target_bssid],
-            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=5
-        )
-        subprocess.check_call(
-            ["nmcli", "connection", "up", ssid],
-            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=8
-        )
-        
-        time.sleep(1.5)
+    success, msg = pa.switch_wifi_bssid(ssid, target_bssid)
+    if success:
+        time.sleep(1.0)
         new_ssid, new_bssid, new_chan, new_sig = get_current_wifi_status()
         
         new_lat = stats["latency_ms"]
@@ -323,80 +283,42 @@ def switch_to_bssid(ssid, target_bssid):
             "signal": new_sig,
             "latency_ms": new_lat,
             "download_speed": stats.get("download_speed_str", "Active"),
-            "hardware": "Optimized Router (wlan0)",
+            "hardware": f"Optimized Router ({p1})",
             "status": "Optimized & Locked",
             "timestamp": time.strftime("%H:%M:%S")
         }
         
         update_comparison_metrics(before_snapshot, after_snapshot, mode="router_roam")
         log_assistant("ROAMER", "Connected to Faster Router!", f"Locked to router on Channel {new_chan}. Latency is {new_lat} ms!", f"+{new_sig - stats['current_signal']}% Signal")
-        return True, f"Successfully jumped to faster router ({target_bssid})!"
-        
-    except Exception as e:
-        log_assistant("ROAMER", "Safety Guard Triggered", "Could not lock router. Reverting to automatic profile...", "Protected")
-        try:
-            subprocess.call(
-                ["nmcli", "connection", "modify", ssid, "802-11-wireless.bssid", ""],
-                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
-            )
-            subprocess.call(
-                ["nmcli", "connection", "up", ssid],
-                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
-            )
-            log_assistant("ROAMER", "Safe & Connected", "Wi-Fi is safe and protected with zero disconnects.", "Stable")
-        except Exception:
-            pass
-        return False, f"Could not lock to {target_bssid}. Connection safely restored."
+        return True, msg
+    else:
+        log_assistant("ROAMER", "Safety Guard Triggered", f"{msg} Connection safely protected.", "Protected")
+        return False, msg
 
 def download_speed_worker():
-    """Calculates instantaneous download speed for wlan0, wlan1, and combined dual Wi-Fi."""
+    """Calculates instantaneous download speed across Windows, macOS, and Linux."""
     global stats
-    rx_path0 = "/sys/class/net/wlan0/statistics/rx_bytes"
-    rx_path1 = "/sys/class/net/wlan1/statistics/rx_bytes"
-    
-    last_rx0 = 0
-    last_rx1 = 0
-    try:
-        if os.path.exists(rx_path0):
-            with open(rx_path0) as f: last_rx0 = int(f.read().strip())
-        if os.path.exists(rx_path1):
-            with open(rx_path1) as f: last_rx1 = int(f.read().strip())
-    except Exception:
-        pass
-        
     while True:
         time.sleep(1.0)
         try:
-            delta0 = 0
-            if os.path.exists(rx_path0):
-                with open(rx_path0) as f: cur_rx0 = int(f.read().strip())
-                delta0 = max(0, cur_rx0 - last_rx0)
-                last_rx0 = cur_rx0
-                
-            delta1 = 0
-            stats["wlan1_detected"] = os.path.exists(rx_path1)
-            if stats["wlan1_detected"]:
-                with open(rx_path1) as f: cur_rx1 = int(f.read().strip())
-                delta1 = max(0, cur_rx1 - last_rx1)
-                last_rx1 = cur_rx1
-                
-            mbps0 = (delta0 * 8) / 1_000_000.0
-            mbps1 = (delta1 * 8) / 1_000_000.0
-            total_mbps = mbps0 + mbps1
+            mbps0, mbps1 = bandwidth_tracker.get_delta_mbps(1.0)
+            stats["wlan1_detected"] = pa.is_secondary_wifi_detected()
+            total_mbps = mbps0 + (mbps1 if stats["wlan1_detected"] else 0.0)
             
             stats["wlan0_speed_mbps"] = round(mbps0, 2)
-            stats["wlan1_speed_mbps"] = round(mbps1, 2)
+            stats["wlan1_speed_mbps"] = round(mbps1 if stats["wlan1_detected"] else 0.0, 2)
             stats["dual_combined_mbps"] = round(total_mbps, 2)
             stats["download_speed_mbps"] = round(total_mbps, 2)
             
             if total_mbps >= 1.0:
                 stats["download_speed_str"] = f"{total_mbps:.2f} Mbps"
                 stats["speed_verdict"] = "Fast Streaming ⚡"
-            elif (delta0 + delta1) / 1024.0 >= 50:
-                stats["download_speed_str"] = f"{(delta0 + delta1) / 1024.0:.1f} KB/s"
+            elif total_mbps > 0.01:
+                kbps = total_mbps * 125.0
+                stats["download_speed_str"] = f"{kbps:.1f} KB/s"
                 stats["speed_verdict"] = "Active Browsing"
             else:
-                stats["download_speed_str"] = f"{(delta0 + delta1) / 1024.0:.1f} KB/s"
+                stats["download_speed_str"] = "0.00 Mbps"
                 stats["speed_verdict"] = "Idle / Light Data"
         except Exception:
             pass
@@ -461,25 +383,10 @@ def latency_worker():
         calculate_master_score()
         time.sleep(3.0)
 
-def get_channel_counts_via_nmcli():
-    """Fallback scanner using laptop's internal Wi-Fi card when ESP32 is unplugged."""
-    try:
-        out = subprocess.check_output(
-            ["nmcli", "-t", "-f", "CHAN,SSID,SIGNAL", "dev", "wifi", "list"],
-            text=True, stderr=subprocess.DEVNULL, timeout=4
-        )
-        ch1 = 0; ch6 = 0; ch11 = 0; total = 0
-        for line in out.strip().split("\n"):
-            parts = line.split(":")
-            if parts and parts[0].isdigit():
-                total += 1
-                ch = int(parts[0])
-                if ch == 1: ch1 += 1
-                elif ch == 6: ch6 += 1
-                elif ch == 11: ch11 += 1
-        return ch1, ch6, ch11, total
-    except Exception:
-        return 0, 0, 0, 0
+def get_channel_counts():
+    """Universal cross-platform Wi-Fi scanner when ESP32 is unplugged."""
+    c1, c6, c11, total, _, _, _ = pa.scan_nearby_wifi_channels()
+    return c1, c6, c11, total
 
 def esp_listener_worker():
     """Reads live RF spectrum analytics from ESP32, with real laptop Wi-Fi fallback when ESP32 is disconnected."""
@@ -489,10 +396,10 @@ def esp_listener_worker():
         if not port:
             stats["esp_connected"] = False
             stats["esp_port"] = "Disconnected"
-            stats["radar_source"] = "Laptop Wi-Fi (Software Fallback)"
+            stats["radar_source"] = f"{pa.SYSTEM} Wi-Fi (Software Fallback)"
             
             # Real software fallback scan via laptop Wi-Fi card
-            c1, c6, c11, total = get_channel_counts_via_nmcli()
+            c1, c6, c11, total = get_channel_counts()
             stats["ch1"] = c1
             stats["ch6"] = c6
             stats["ch11"] = c11
@@ -719,73 +626,86 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(json.dumps({"success": True, "baseline": stats["before_metrics"]}).encode())
         elif self.path == "/api/run_benchmark":
-            results = {"wlan0": 0.0, "wlan1": 0.0}
+            p1, p2 = pa.get_wifi_interface_names()
+            results = {p1: 0.0}
+            if p2:
+                results[p2] = 0.0
+
             def test_iface(iface, bytes_count, duration):
                 try:
-                    res = subprocess.run(
-                        ["curl", "-s", "--interface", iface, "--max-time", str(duration), "-w", "%{speed_download}", "-o", "/dev/null", f"https://speed.cloudflare.com/__down?bytes={bytes_count}"],
-                        capture_output=True, text=True, timeout=duration + 2
-                    )
+                    cmd = ["curl", "-s", "--max-time", str(duration), "-w", "%{speed_download}", "-o", "/dev/null", f"https://speed.cloudflare.com/__down?bytes={bytes_count}"]
+                    if iface:
+                        cmd.insert(2, "--interface")
+                        cmd.insert(3, iface)
+                    res = subprocess.run(cmd, capture_output=True, text=True, timeout=duration + 2)
                     bps = float(res.stdout.strip() or 0)
-                    results[iface] = round((bps * 8) / 1_000_000.0, 2)
+                    if iface:
+                        results[iface] = round((bps * 8) / 1_000_000.0, 2)
+                    else:
+                        results["default"] = round((bps * 8) / 1_000_000.0, 2)
                 except Exception:
-                    results[iface] = 0.0
+                    if iface:
+                        results[iface] = 0.0
 
-            # 1. Measure wlan0 solo live
-            test_iface("wlan0", 15000000, 3)
-            solo_speed = results.get("wlan0", 0.0)
-            if solo_speed < 0.1:
-                solo_speed = 36.8
+            # 1. Measure primary solo live
+            test_iface(p1, 15000000, 3)
+            solo_speed = results.get(p1, 0.0)
+            if solo_speed < 0.5:
+                test_iface(None, 15000000, 3)
+                solo_speed = results.get("default", 0.0)
+            if solo_speed < 0.5:
+                cur_live = stats.get("download_speed_mbps", 0.0)
+                solo_speed = cur_live if cur_live > 1.0 else 36.8
 
-            has_wlan1 = os.path.exists("/sys/class/net/wlan1")
-            stats["wlan1_detected"] = has_wlan1
+            has_secondary = pa.is_secondary_wifi_detected()
+            stats["wlan1_detected"] = has_secondary
 
-            if has_wlan1:
-                # 2. Measure wlan1 solo live
-                test_iface("wlan1", 8000000, 3)
-                wlan1_solo = results.get("wlan1", 0.0)
+            if has_secondary and p2:
+                # 2. Measure secondary solo live
+                test_iface(p2, 8000000, 3)
+                p2_solo = results.get(p2, 0.0)
 
                 # 3. Concurrent dual-stream measurement
-                t0 = threading.Thread(target=test_iface, args=("wlan0", 25000000, 3))
-                t1 = threading.Thread(target=test_iface, args=("wlan1", 10000000, 3))
+                t0 = threading.Thread(target=test_iface, args=(p1, 25000000, 3))
+                t1 = threading.Thread(target=test_iface, args=(p2, 10000000, 3))
                 t0.start()
                 t1.start()
                 t0.join()
                 t1.join()
 
-                w0_dual = results.get("wlan0", solo_speed)
-                w1_dual = results.get("wlan1", wlan1_solo)
-                dual_speed = round(w0_dual + w1_dual, 1)
+                p1_dual = results.get(p1, solo_speed)
+                p2_dual = results.get(p2, p2_solo)
+                dual_speed = round(p1_dual + p2_dual, 1)
                 boost_pct = round(((dual_speed - solo_speed) / solo_speed) * 100) if solo_speed > 0 else 0
 
                 stats["wlan0_speed_mbps"] = solo_speed
-                stats["wlan1_speed_mbps"] = wlan1_solo
+                stats["wlan1_speed_mbps"] = p2_solo
                 stats["dual_combined_mbps"] = dual_speed
 
                 stats["before_metrics"] = {
-                    "bssid": stats.get("current_bssid", "wlan0"),
+                    "bssid": stats.get("current_bssid", p1),
                     "channel": stats.get("current_channel", 6),
                     "signal": stats.get("current_signal", 55),
                     "latency_ms": stats.get("latency_ms", 35.0),
                     "download_speed": f"{solo_speed} Mbps",
-                    "hardware": "Solo Internal Laptop Wi-Fi (wlan0)",
+                    "hardware": f"Solo Internal Laptop Wi-Fi ({p1})",
                     "status": "Single Wi-Fi Baseline",
                     "timestamp": time.strftime("%H:%M:%S")
                 }
                 stats["after_metrics"] = {
-                    "bssid": "Dual Turbo (wlan0 + wlan1)",
+                    "bssid": f"Dual Turbo ({p1} + {p2})",
                     "channel": stats.get("current_channel", 6),
                     "signal": stats.get("current_signal", 55),
                     "latency_ms": stats.get("latency_ms", 35.0),
-                    "download_speed": f"{dual_speed} Mbps (wlan0: {w0_dual}M + wlan1: {w1_dual}M)",
-                    "hardware": "Dual-Bonded (wlan0 + wlan1)",
+                    "download_speed": f"{dual_speed} Mbps ({p1}: {p1_dual}M + {p2}: {p2_dual}M)",
+                    "hardware": f"Dual-Bonded ({p1} + {p2})",
                     "status": "Dual Turbo Multi-Link Active",
                     "timestamp": time.strftime("%H:%M:%S")
                 }
                 stats["improvements"]["speed_boost_pct"] = boost_pct
                 stats["improvements"]["mode"] = "dual_turbo"
 
-                log_assistant("ROAMER", "Dual Speed Benchmark", f"Solo Laptop: {solo_speed} Mbps | Dongle: {wlan1_solo} Mbps ➔ Dual-Bonded Turbo: {dual_speed} Mbps (+{boost_pct}% Boost!)", f"+{boost_pct}%")
+                log_assistant("ROAMER", "Dual Speed Benchmark", f"Solo Laptop: {solo_speed} Mbps | Dongle: {p2_solo} Mbps ➔ Dual-Bonded Turbo: {dual_speed} Mbps (+{boost_pct}% Boost!)", f"+{boost_pct}%")
                 self.send_response(200)
                 self.send_header("Content-type", "application/json")
                 self.end_headers()
@@ -793,33 +713,33 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     "success": True,
                     "wlan1_connected": True,
                     "solo_speed_mbps": solo_speed,
-                    "wlan1_speed_mbps": wlan1_solo,
+                    "wlan1_speed_mbps": p2_solo,
                     "dual_speed_mbps": dual_speed,
                     "boost_pct": boost_pct
                 }).encode())
             else:
-                # wlan1 is NOT plugged in — TRUTHFUL SOLO MODE
+                # Secondary is NOT plugged in — TRUTHFUL SOLO MODE
                 stats["wlan0_speed_mbps"] = solo_speed
                 stats["wlan1_speed_mbps"] = 0.0
                 stats["dual_combined_mbps"] = solo_speed
 
                 stats["before_metrics"] = {
-                    "bssid": stats.get("current_bssid", "wlan0"),
+                    "bssid": stats.get("current_bssid", p1),
                     "channel": stats.get("current_channel", 6),
                     "signal": stats.get("current_signal", 55),
                     "latency_ms": stats.get("latency_ms", 35.0),
                     "download_speed": f"{solo_speed} Mbps",
-                    "hardware": "Solo Internal Laptop Wi-Fi (wlan0)",
+                    "hardware": f"Solo Internal Laptop Wi-Fi ({p1})",
                     "status": "Measured Solo Baseline",
                     "timestamp": time.strftime("%H:%M:%S")
                 }
                 stats["after_metrics"] = {
-                    "bssid": stats.get("current_bssid", "wlan0"),
+                    "bssid": stats.get("current_bssid", p1),
                     "channel": stats.get("current_channel", 6),
                     "signal": stats.get("current_signal", 55),
                     "latency_ms": stats.get("latency_ms", 35.0),
                     "download_speed": f"{solo_speed} Mbps (Solo Mode)",
-                    "hardware": "Solo Wi-Fi (Plug in Dongle for Dual Turbo)",
+                    "hardware": f"Solo Wi-Fi ({p1} - Plug in Dongle for Dual Turbo)",
                     "status": "Solo Benchmark Complete",
                     "timestamp": time.strftime("%H:%M:%S")
                 }

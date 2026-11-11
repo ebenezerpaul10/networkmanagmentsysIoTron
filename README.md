@@ -1,31 +1,61 @@
 # NetShield-IoT: Hardware RF Radar & Network Optimization System
 
+Cross-platform network optimization engine, RF airwave congestion scanner, DNS tracking shield, and live multi-adapter speed aggregator for **Windows, macOS, and Linux**.
+
+---
+
 ## 📂 Project Structure
-- `esp32_radar/esp32_radar.ino` : Firmware for the ESP32 (Scans 2.4GHz channels, measures latency, detects cleanest AP).
-- `laptop_engine/netshield.py` : Host engine (Serial listener + Hardware-grade DNS Ad & Spyware Shield + Live Terminal Dashboard).
+- `esp32_radar/esp32_radar.ino` : Firmware for the ESP32 (Scans 2.4GHz channels, measures congestion, sniffs nearby APs).
+- `laptop_engine/platform_adapter.py` : Universal cross-platform network, serial port, and Wi-Fi abstraction layer (Windows `netsh`, macOS `airport`/`networksetup`, Linux `nmcli`/`sysfs`).
+- `laptop_engine/netshield.py` : Host engine (Serial listener, DNS ad-blocker, dual Wi-Fi speed tracker, HTTP REST API & dashboard).
+- `web_dashboard/index.html` : Modern glassmorphic Web UI with live airwave waveforms, highway traffic analogy, and before/after optimization proof.
+- `start_netshield.bat` : One-click launcher for **Windows**.
+- `start_netshield.sh` : One-click launcher for **macOS & Linux**.
+- `start_netshield.py` : Universal cross-platform Python launcher.
 
-## 🚀 How to Launch Arduino IDE (GUI)
-Run this command in any terminal:
-```bash
-arduino-ide
+---
+
+## 🚀 How to Run (One-Click)
+
+### 🪟 Windows:
+Double-click `start_netshield.bat` or run:
+```cmd
+start_netshield.bat
 ```
-(Installed at `~/.local/bin/arduino-ide` pointing to `/home/octopaul/Applications/arduino-ide.AppImage`)
 
-## ⚡ How to Flash ESP32
-1. Plug your ESP32 into a laptop USB port.
-2. Open `esp32_radar/esp32_radar.ino` in Arduino IDE.
-3. Select Board: **ESP32 Dev Module**, Port: `/dev/ttyUSB0` (or `/dev/ttyACM0`).
+### 🍎 macOS / 🐧 Linux:
+Run in your terminal:
+```bash
+./start_netshield.sh
+```
+
+### 🐍 Universal Python:
+Works on any system with Python 3.8+:
+```bash
+python3 start_netshield.py
+```
+*(Dependencies `pyserial`, `psutil`, `dnslib` will be automatically verified and installed if missing)*.
+
+Dashboard opens automatically at: **`http://localhost:8080`**
+
+---
+
+## ⚡ ESP32 Hardware RF Sniffer (Optional)
+NetShield operates with **dual-mode intelligence**:
+1. **With ESP32 plugged in:** Sniffs raw RF airwaves 24/7 without interrupting laptop connectivity.
+2. **Without ESP32:** Gracefully falls back to laptop OS software scanning (`Windows netsh`, `macOS airport`, `Linux nmcli`) with full transparency.
+
+### Flashing Firmware:
+1. Open `esp32_radar/esp32_radar.ino` in Arduino IDE.
+2. Select Board: **ESP32 Dev Module**.
+3. Select Port:
+   - **Windows:** `COM3`, `COM4`, etc.
+   - **macOS:** `/dev/cu.usbserial-*` or `/dev/cu.wch*`
+   - **Linux:** `/dev/ttyUSB0` or `/dev/ttyACM0`
 4. Click **Upload**!
 
-## 🛡️ How to Run the Laptop Engine & Dashboard
-```bash
-python3 /home/octopaul/antigravity/NetShield-IoT/laptop_engine/netshield.py
-```
+---
 
-## 🚀 How to Enable Dual-Network Bonding (Speed Doubler)
-1. Keep Laptop connected to Hostel Wi-Fi.
-2. Connect your Mobile Phone to Laptop via USB cable and turn on **USB Tethering** (or 2nd Wi-Fi adapter).
-3. Start dispatch-proxy to combine speeds:
-```bash
-dispatch start
-```
+## ⚡ Dual-Network Multi-Link (Speed Aggregator)
+- Plug in a secondary USB Wi-Fi adapter or connect a phone via USB Tethering.
+- NetShield detects both adapters simultaneously, measures live individual throughputs, and aggregates traffic across both links.
