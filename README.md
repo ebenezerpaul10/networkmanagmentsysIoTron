@@ -8,7 +8,9 @@ Cross-platform network optimization engine, RF airwave congestion scanner, DNS t
 - `esp32_radar/esp32_radar.ino` : Firmware for the ESP32 (Scans 2.4GHz channels, measures congestion, sniffs nearby APs).
 - `laptop_engine/platform_adapter.py` : Universal cross-platform network, serial port, and Wi-Fi abstraction layer (Windows `netsh`, macOS `airport`/`networksetup`, Linux `nmcli`/`sysfs`).
 - `laptop_engine/netshield.py` : Host engine (Serial listener, DNS ad-blocker, dual Wi-Fi speed tracker, HTTP REST API & dashboard).
-- `web_dashboard/index.html` : Modern glassmorphic Web UI with live airwave waveforms, highway traffic analogy, and before/after optimization proof.
+- `frontend/` : Pure White Enterprise React Controller (React 19, TypeScript, Vite, Tailwind CSS, Lucide React, Recharts).
+- `web_dashboard/index.html` : Production build of the Pure White Enterprise Network Controller.
+- `web_dashboard/index.legacy.html` : Archived legacy UI backup.
 - `start_netshield.bat` : One-click launcher for **Windows**.
 - `start_netshield.sh` : One-click launcher for **macOS & Linux**.
 - `start_netshield.py` : Universal cross-platform Python launcher.
@@ -37,6 +39,24 @@ python3 start_netshield.py
 *(Dependencies `pyserial`, `psutil`, `dnslib` will be automatically verified and installed if missing)*.
 
 Dashboard opens automatically at: **`http://localhost:8080`**
+
+---
+
+## 🛠️ Frontend Development (React + Vite + Tailwind)
+
+To run the frontend in development mode with hot reload:
+```bash
+cd frontend
+npm install
+npm run dev
+```
+*(Proxy in `vite.config.ts` will forward all `/api` calls to `http://127.0.0.1:8080`)*.
+
+To compile production assets into `web_dashboard/`:
+```bash
+cd frontend
+npm run build
+```
 
 ---
 

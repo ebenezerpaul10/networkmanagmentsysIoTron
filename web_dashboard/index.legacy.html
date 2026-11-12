@@ -1,0 +1,1565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NetShield-IoT | Ultra-Simple Network Optimizer</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg: #070b14;
+            --card-bg: rgba(15, 23, 42, 0.78);
+            --card-border: rgba(0, 242, 254, 0.16);
+            --accent: #00f2fe;
+            --accent-glow: rgba(0, 242, 254, 0.35);
+            --neon-green: #10b981;
+            --neon-green-glow: rgba(16, 185, 129, 0.3);
+            --neon-amber: #f59e0b;
+            --neon-red: #ef4444;
+            --neon-purple: #a855f7;
+            --text: #f8fafc;
+            --text-dim: #94a3b8;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg);
+            background-image: 
+                radial-gradient(circle at 10% 10%, rgba(0, 242, 254, 0.08) 0%, transparent 45%),
+                radial-gradient(circle at 90% 90%, rgba(16, 185, 129, 0.08) 0%, transparent 45%);
+            color: var(--text);
+            margin: 0;
+            padding: 24px;
+            min-height: 100vh;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--card-border);
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .logo-box h1 {
+            margin: 0;
+            font-size: 26px;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            letter-spacing: 0.5px;
+        }
+
+        .badge {
+            padding: 7px 16px;
+            border-radius: 9999px;
+            font-size: 13px;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 0 14px rgba(0,0,0,0.4);
+            backdrop-filter: blur(8px);
+        }
+        .badge.online { background: rgba(16, 185, 129, 0.15); color: var(--neon-green); border: 1px solid var(--neon-green); }
+        .badge.offline { background: rgba(239, 68, 68, 0.15); color: var(--neon-red); border: 1px solid var(--neon-red); }
+
+        /* HERO CARD: Master 0-100 Score & Status */
+        .hero-banner {
+            margin-top: 24px;
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(11, 15, 25, 0.95));
+            border: 1px solid rgba(0, 242, 254, 0.3);
+            border-radius: 20px;
+            padding: 24px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 24px;
+            backdrop-filter: blur(16px);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-banner::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; height: 2px;
+            background: linear-gradient(90deg, transparent, var(--accent), var(--neon-green), transparent);
+        }
+
+        .score-box {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .score-circle {
+            width: 88px;
+            height: 88px;
+            border-radius: 50%;
+            background: rgba(0, 242, 254, 0.08);
+            border: 3px solid var(--accent);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 0 25px var(--accent-glow);
+            transition: all 0.5s;
+        }
+
+        .score-num {
+            font-size: 32px;
+            font-weight: 900;
+            color: #fff;
+            line-height: 1;
+        }
+        .score-total {
+            font-size: 11px;
+            color: var(--accent);
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .hero-text h2 {
+            margin: 0;
+            font-size: 22px;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .hero-text p {
+            margin: 6px 0 0 0;
+            color: var(--text-dim);
+            font-size: 14px;
+            max-width: 500px;
+            line-height: 1.5;
+        }
+
+        .hero-actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        /* Buttons */
+        .btn {
+            background: var(--accent);
+            color: #070b14;
+            border: none;
+            padding: 13px 26px;
+            font-size: 15px;
+            font-weight: 800;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 0 20px var(--accent-glow);
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 30px rgba(0, 242, 254, 0.6);
+        }
+        .btn:active {
+            transform: scale(0.97);
+        }
+
+        .btn-outline {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text);
+            border: 1px solid var(--card-border);
+            box-shadow: none;
+            padding: 12px 20px;
+            font-size: 14px;
+            border-radius: 12px;
+        }
+        .btn-outline.active {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--neon-green);
+            border-color: var(--neon-green);
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+        }
+
+        /* 4 Core Metric Cards Grid */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 20px;
+            margin-top: 24px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 22px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+            backdrop-filter: blur(12px);
+            transition: border-color 0.3s, transform 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+        .card:hover {
+            border-color: rgba(0, 242, 254, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .card-header-flex {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .card-title {
+            font-size: 13px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            font-weight: 700;
+        }
+
+        .card-icon {
+            font-size: 20px;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 900;
+            color: #fff;
+            margin: 6px 0;
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+        }
+
+        .stat-sub {
+            font-size: 13px;
+            color: var(--text-dim);
+            line-height: 1.5;
+        }
+
+        /* Wi-Fi Signal Bars Widget */
+        .signal-bars-widget {
+            display: inline-flex;
+            gap: 4px;
+            align-items: flex-end;
+            height: 18px;
+            vertical-align: middle;
+            margin-left: 8px;
+        }
+        .signal-bar {
+            width: 4px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 2px;
+            transition: background 0.3s;
+        }
+        .signal-bar.active { background: var(--neon-green); box-shadow: 0 0 6px var(--neon-green); }
+        .b1 { height: 6px; }
+        .b2 { height: 10px; }
+        .b3 { height: 14px; }
+        .b4 { height: 18px; }
+
+        /* The Highway Analogy Section */
+        .highway-section {
+            margin-top: 24px;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 18px;
+            padding: 24px;
+            backdrop-filter: blur(14px);
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 18px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .section-header h3 {
+            margin: 0;
+            font-size: 18px;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .section-header p {
+            margin: 4px 0 0 0;
+            font-size: 13px;
+            color: var(--text-dim);
+        }
+
+        .lanes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
+            margin-top: 16px;
+        }
+
+        .lane-card {
+            background: rgba(0, 0, 0, 0.35);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 14px;
+            padding: 18px;
+            position: relative;
+            transition: all 0.3s;
+        }
+        .lane-card.best {
+            border: 1.5px solid var(--neon-green);
+            background: rgba(16, 185, 129, 0.05);
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.15);
+        }
+        .lane-card.active-user {
+            border: 1.5px solid var(--accent);
+            background: rgba(0, 242, 254, 0.05);
+        }
+
+        .lane-badge {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            font-size: 11px;
+            font-weight: 800;
+            padding: 4px 10px;
+            border-radius: 999px;
+            text-transform: uppercase;
+        }
+        .lane-badge.fast { background: rgba(16, 185, 129, 0.2); color: var(--neon-green); border: 1px solid var(--neon-green); }
+        .lane-badge.medium { background: rgba(245, 158, 11, 0.2); color: var(--neon-amber); border: 1px solid var(--neon-amber); }
+        .lane-badge.jammed { background: rgba(239, 68, 68, 0.2); color: var(--neon-red); border: 1px solid var(--neon-red); }
+
+        .lane-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: #fff;
+            margin-bottom: 6px;
+        }
+        .lane-status {
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        .lane-desc {
+            font-size: 12px;
+            color: var(--text-dim);
+        }
+
+        /* Before vs After Live Comparison Matrix */
+        .comparison-section {
+            margin-top: 24px;
+            background: rgba(13, 19, 33, 0.88);
+            border: 1px solid rgba(0, 242, 254, 0.25);
+            border-radius: 18px;
+            padding: 24px;
+            backdrop-filter: blur(16px);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .delta-pills {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .pill {
+            padding: 6px 14px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 800;
+        }
+        .pill.green { background: rgba(16, 185, 129, 0.2); color: var(--neon-green); border: 1px solid var(--neon-green); }
+        .pill.cyan { background: rgba(0, 242, 254, 0.2); color: var(--accent); border: 1px solid var(--accent); }
+
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 18px;
+        }
+        @media (max-width: 768px) {
+            .comparison-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .comp-card {
+            border-radius: 14px;
+            padding: 22px;
+            position: relative;
+        }
+        .comp-card.before {
+            background: rgba(239, 68, 68, 0.05);
+            border: 1px solid rgba(239, 68, 68, 0.35);
+        }
+        .comp-card.after {
+            background: rgba(16, 185, 129, 0.05);
+            border: 1px solid rgba(16, 185, 129, 0.45);
+        }
+
+        .comp-title {
+            font-size: 14px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin-bottom: 16px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .comp-metric { margin-bottom: 14px; }
+        .comp-label {
+            font-size: 12px;
+            color: var(--text-dim);
+            margin-bottom: 6px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .comp-bar-container {
+            height: 8px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .comp-bar {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* ======================================================== */
+        /* 🔥 BOTTOM SECTION: LEFT-TO-RIGHT GRAPH & ROBO-SENTRY     */
+        /* ======================================================== */
+        .bottom-grid {
+            display: grid;
+            grid-template-columns: 1.1fr 0.9fr;
+            gap: 20px;
+            margin-top: 24px;
+        }
+        @media (max-width: 1024px) {
+            .bottom-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Left: Intuitive Left-to-Right Traffic Wave */
+        .radar-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 18px;
+            padding: 24px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .zone-legend {
+            display: flex;
+            gap: 14px;
+            font-size: 12px;
+            font-weight: 700;
+            margin-top: 4px;
+            flex-wrap: wrap;
+        }
+        .zone-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 4px;
+        }
+
+        .chart-ctrls {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .chart-toggle-btn {
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--text-dim);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 5px 12px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .chart-toggle-btn.active {
+            background: rgba(0, 242, 254, 0.15);
+            color: var(--accent);
+            border-color: var(--accent);
+        }
+
+        .radar-meta-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 14px;
+            padding-top: 12px;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+            font-size: 12px;
+            color: var(--text-dim);
+        }
+
+        /* Right: Friendly Robo-Sentry Speech & Feed */
+        .robo-card {
+            background: rgba(11, 15, 25, 0.9);
+            border: 1px solid rgba(0, 242, 254, 0.25);
+            border-radius: 18px;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+
+        /* Animated Robot Speech Bubble */
+        .robo-bubble-box {
+            display: flex;
+            gap: 14px;
+            align-items: flex-start;
+            margin-bottom: 18px;
+            background: linear-gradient(135deg, rgba(0, 242, 254, 0.08), rgba(16, 185, 129, 0.04));
+            border: 1.5px solid rgba(0, 242, 254, 0.3);
+            border-radius: 16px;
+            padding: 16px 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .robo-avatar {
+            font-size: 32px;
+            line-height: 1;
+            filter: drop-shadow(0 0 10px var(--accent));
+        }
+
+        .robo-text-box h4 {
+            margin: 0;
+            font-size: 13px;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .robo-text-box p {
+            margin: 4px 0 0 0;
+            font-size: 14px;
+            font-weight: 600;
+            color: #fff;
+            line-height: 1.5;
+            transition: color 0.3s;
+        }
+
+        /* Calm, Non-Flickering Recent History List */
+        .history-title {
+            font-size: 12px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-dim);
+            margin-bottom: 10px;
+        }
+
+        .history-list {
+            flex: 1;
+            max-height: 200px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding-right: 4px;
+        }
+
+        .history-item {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 10px;
+            padding: 10px 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            transition: background 0.2s;
+        }
+        .history-item:hover {
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        .hist-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .hist-icon {
+            font-size: 18px;
+        }
+        .hist-text h5 {
+            margin: 0;
+            font-size: 13px;
+            color: #fff;
+            font-weight: 700;
+        }
+        .hist-text p {
+            margin: 2px 0 0 0;
+            font-size: 12px;
+            color: var(--text-dim);
+        }
+        .hist-time {
+            font-size: 11px;
+            color: var(--text-dim);
+            font-family: monospace;
+            white-space: nowrap;
+        }
+
+        /* Cyberpunk Fluid Toast Notifications */
+        #toast-container {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            z-index: 99999;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            pointer-events: none;
+        }
+
+        .cyber-toast {
+            pointer-events: auto;
+            min-width: 320px;
+            max-width: 420px;
+            background: rgba(11, 15, 25, 0.92);
+            backdrop-filter: blur(16px);
+            border-radius: 14px;
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            box-shadow: 0 10px 35px rgba(0, 0, 0, 0.6);
+            transform: translateX(120%);
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        .cyber-toast.show { transform: translateX(0); opacity: 1; }
+        .cyber-toast.toast-success { border: 1px solid var(--neon-green); box-shadow: 0 0 20px rgba(16, 185, 129, 0.25); }
+        .cyber-toast.toast-error { border: 1px solid var(--neon-red); box-shadow: 0 0 20px rgba(239, 68, 68, 0.25); }
+        .cyber-toast.toast-info { border: 1px solid var(--accent); box-shadow: 0 0 20px rgba(0, 242, 254, 0.25); }
+
+        .toast-icon { font-size: 22px; }
+        .toast-content h4 { margin: 0; font-size: 14px; color: #fff; }
+        .toast-content p { margin: 2px 0 0 0; font-size: 12px; color: var(--text-dim); }
+
+        .toast-progress {
+            position: absolute;
+            bottom: 0; left: 0; height: 3px; width: 100%;
+            background: var(--accent);
+            animation: toastProgress 3.5s linear forwards;
+        }
+        @keyframes toastProgress {
+            from { width: 100%; }
+            to { width: 0%; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Floating Cyberpunk Toast Container -->
+    <div id="toast-container"></div>
+
+    <!-- Header -->
+    <div class="header">
+        <div class="logo-box">
+            <h1>🛡️ NetShield-IoT <span style="font-size: 14px; color: var(--accent); font-weight: normal;">| Intelligent Network Optimizer</span></h1>
+        </div>
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <button id="btn-auto-roam" class="btn btn-outline" onclick="toggleAutoRoam()">
+                🔄 Auto-Pilot: OFF
+            </button>
+            <span id="hw-status" class="badge offline">● WAITING FOR ESP32</span>
+        </div>
+    </div>
+
+    <!-- HERO SECTION: Master Internet Score (0 to 100) -->
+    <div class="hero-banner">
+        <div class="score-box">
+            <div class="score-circle">
+                <span class="score-num" id="master-score">92</span>
+                <span class="score-total">/ 100</span>
+            </div>
+            <div class="hero-text">
+                <h2 id="health-title">🚀 Ultra Smooth Connection</h2>
+                <p id="health-sub">Your network is flying! ESP32 hardware radar is guarding your room.</p>
+            </div>
+        </div>
+
+        <div class="hero-actions">
+            <button class="btn btn-outline" onclick="captureBaseline()" title="Save current speed as Before reference">
+                📌 Save Baseline
+            </button>
+            <button class="btn" onclick="triggerManualSwitch()">
+                ⚡ Boost Internet Now
+            </button>
+        </div>
+    </div>
+
+    <!-- 4 CORE METRIC CARDS -->
+    <div class="metrics-grid">
+        <!-- Card 1: Live Speed -->
+        <div class="card">
+            <div class="card-header-flex">
+                <span class="card-title">Live Download Speed</span>
+                <span class="card-icon">🚀</span>
+            </div>
+            <div class="stat-value" id="val-speed" style="color: var(--accent);">0.00 Mbps</div>
+            <div class="stat-sub" id="sub-speed">Live network throughput on wlan0</div>
+        </div>
+
+        <!-- Card 2: Gaming & Call Ping -->
+        <div class="card">
+            <div class="card-header-flex">
+                <span class="card-title">Gaming & Call Ping</span>
+                <span class="card-icon">⚡</span>
+            </div>
+            <div class="stat-value" id="val-latency">-- ms</div>
+            <div class="stat-sub" id="sub-latency">Instant response time to cloud</div>
+        </div>
+
+        <!-- Card 3: Wi-Fi Signal Bars -->
+        <div class="card">
+            <div class="card-header-flex">
+                <span class="card-title">Room Signal Strength</span>
+                <span class="card-icon">📶</span>
+            </div>
+            <div class="stat-value">
+                <span id="val-cur-sig">--%</span>
+                <div class="signal-bars-widget" id="sig-bars-container">
+                    <div class="signal-bar b1 active"></div>
+                    <div class="signal-bar b2 active"></div>
+                    <div class="signal-bar b3 active"></div>
+                    <div class="signal-bar b4"></div>
+                </div>
+            </div>
+            <div class="stat-sub" id="sub-signal">Connected to <b id="val-cur-ssid" style="color:#fff;">--</b> (<span id="val-cur-chan">Ch --</span>)</div>
+        </div>
+
+        <!-- Card 4: Junk & Spyware Shield -->
+        <div class="card">
+            <div class="card-header-flex">
+                <span class="card-title">Junk & Spyware Shield</span>
+                <span class="card-icon">🛡️</span>
+            </div>
+            <div class="stat-value" id="val-blocked" style="color: var(--neon-amber);">0</div>
+            <div class="stat-sub" id="sub-saved">0.0 KB wasted hostel bandwidth saved</div>
+        </div>
+    </div>
+
+    <!-- THE HIGHWAY ANALOGY SECTION (Channels 1, 6, 11) -->
+    <div class="highway-section">
+        <div class="section-header">
+            <div>
+                <h3>🛣️ Wi-Fi Traffic Lanes (The Highway Analogy)</h3>
+                <p id="highway-desc">Wi-Fi works like a 3-lane highway. When other rooms crowd one lane, your net slows down. NetShield finds the cleanest empty lane!</p>
+            </div>
+            <div>
+                <span class="pill green" id="pill-best-lane">🏎️ Lane 11: Empty Fast Lane</span>
+            </div>
+        </div>
+
+        <div class="lanes-grid">
+            <div class="lane-card" id="card-lane1">
+                <span class="lane-badge" id="badge-lane1">Moderate</span>
+                <div class="lane-title">Lane 1 (Channel 1)</div>
+                <div class="lane-status" id="status-lane1" style="color: var(--neon-amber);">🚗 2 Routers</div>
+                <div class="lane-desc" id="desc-lane1">Medium congestion on this frequency.</div>
+            </div>
+
+            <div class="lane-card" id="card-lane6">
+                <span class="lane-badge" id="badge-lane6">Jammed</span>
+                <div class="lane-title">Lane 6 (Channel 6)</div>
+                <div class="lane-status" id="status-lane6" style="color: var(--neon-red);">🚗🚗🚗 4 Routers</div>
+                <div class="lane-desc" id="desc-lane6">Heavy interference from surrounding rooms.</div>
+            </div>
+
+            <div class="lane-card best" id="card-lane11">
+                <span class="lane-badge fast" id="badge-lane11">Fast Lane</span>
+                <div class="lane-title">Lane 11 (Channel 11)</div>
+                <div class="lane-status" id="status-lane11" style="color: var(--neon-green);">🏎️ 0 Routers (Empty)</div>
+                <div class="lane-desc" id="desc-lane11">Cleanest lane! Zero traffic interference.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- BEFORE vs AFTER LIVE IMPACT MATRIX -->
+    <!-- BEFORE vs AFTER LIVE IMPACT MATRIX (TRUTHFUL HARDWARE-AWARE BENCHMARK) -->
+    <div class="comparison-section">
+        <div class="section-header">
+            <div>
+                <h3>⚡ Live Optimization Proof: Before vs After</h3>
+                <p id="comp-mode-desc">Real-time side-by-side benchmark comparing baseline vs optimized network state.</p>
+            </div>
+            <div class="delta-pills">
+                <span class="pill green" id="pill-speed-gain">🚀 Speed: Live</span>
+                <span class="pill cyan" id="pill-lat-drop">🔻 Latency: Live</span>
+                <span class="pill green" id="pill-sig-gain">📶 Signal: Live</span>
+                <button class="btn btn-outline" style="padding: 4px 12px; font-size: 11px; margin-left: 6px;" onclick="runSpeedBenchmark()">⚡ Run Benchmark</button>
+            </div>
+        </div>
+
+        <div class="comparison-grid">
+            <div class="comp-card before">
+                <div class="comp-title" style="color: var(--neon-red);">
+                    <span id="before-card-title">🐢 Baseline State (Before)</span>
+                    <span id="before-time" style="font-size:11px; color:var(--text-dim);">Single Link</span>
+                </div>
+                
+                <div class="comp-metric">
+                    <div class="comp-label">
+                        <span id="before-speed-label">⚡ Download Speed</span>
+                        <b id="before-speed-val" style="color: var(--neon-amber);">--</b>
+                    </div>
+                    <div class="comp-bar-container">
+                        <div class="comp-bar" id="before-speed-bar" style="width: 40%; background: var(--neon-amber);"></div>
+                    </div>
+                </div>
+
+                <div class="comp-metric">
+                    <div class="comp-label">
+                        <span>Ping Latency</span>
+                        <b id="before-lat-val" style="color: var(--neon-red);">-- ms</b>
+                    </div>
+                    <div class="comp-bar-container">
+                        <div class="comp-bar" id="before-lat-bar" style="width: 50%; background: var(--neon-red);"></div>
+                    </div>
+                </div>
+
+                <div class="comp-metric">
+                    <div class="comp-label">
+                        <span>Signal Power</span>
+                        <b id="before-sig-val" style="color: var(--neon-amber);">--%</b>
+                    </div>
+                    <div class="comp-bar-container">
+                        <div class="comp-bar" id="before-sig-bar" style="width: 50%; background: var(--neon-amber);"></div>
+                    </div>
+                </div>
+
+                <div style="font-size: 12px; color: var(--text-dim); margin-top: 10px;">
+                    Hardware: <span id="before-hardware" style="color:#fff;">Solo Laptop Wi-Fi (wlan0)</span> | Channel: <span id="before-chan" style="color:var(--neon-amber);">Ch --</span>
+                </div>
+            </div>
+
+            <div class="comp-card after">
+                <div class="comp-title" style="color: var(--neon-green);">
+                    <span id="after-card-title">🚀 Optimized State (After)</span>
+                    <span id="after-time" style="font-size:11px; color:var(--text-dim);">Live</span>
+                </div>
+
+                <div class="comp-metric">
+                    <div class="comp-label">
+                        <span id="after-speed-label">🚀 Download Speed</span>
+                        <b id="after-speed-val" style="color: var(--neon-green);">--</b>
+                    </div>
+                    <div class="comp-bar-container">
+                        <div class="comp-bar" id="after-speed-bar" style="width: 60%; background: linear-gradient(90deg, #10b981, #00f2fe);"></div>
+                    </div>
+                </div>
+
+                <div class="comp-metric">
+                    <div class="comp-label">
+                        <span>Ping Latency</span>
+                        <b id="after-lat-val" style="color: var(--neon-green);">-- ms</b>
+                    </div>
+                    <div class="comp-bar-container">
+                        <div class="comp-bar" id="after-lat-bar" style="width: 25%; background: var(--neon-green);"></div>
+                    </div>
+                </div>
+
+                <div class="comp-metric">
+                    <div class="comp-label">
+                        <span>Signal Power</span>
+                        <b id="after-sig-val" style="color: var(--neon-green);">--%</b>
+                    </div>
+                    <div class="comp-bar-container">
+                        <div class="comp-bar" id="after-sig-bar" style="width: 60%; background: var(--neon-green);"></div>
+                    </div>
+                </div>
+
+                <div style="font-size: 12px; color: var(--text-dim); margin-top: 10px;">
+                    Hardware: <span id="after-hardware" style="color:var(--neon-green);">--</span> | Route: <span id="after-chan" style="color:var(--neon-green);">--</span>
+                </div>
+            </div>
+        </div>
+
+        <div id="comp-dongle-hint" style="margin-top: 14px; font-size: 12px; padding: 10px 14px; border-radius: 10px; background: rgba(0, 242, 254, 0.05); border: 1px dashed rgba(0, 242, 254, 0.2); display: flex; align-items: center; justify-content: space-between;">
+            <span id="comp-hint-text">💡 Dongle Standby: Currently in Solo Wi-Fi mode. Plug in USB Wi-Fi dongle to unlock Dual-Bonded Turbo mode!</span>
+            <span id="comp-hint-badge" class="badge offline" style="font-size: 10px; padding: 3px 8px;">Dongle Offline</span>
+        </div>
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- 🔥 KID-SIMPLE LEFT-TO-RIGHT GRAPH & ROBO-SENTRY ASSISTANT -->
+    <!-- ======================================================== -->
+    <div class="bottom-grid">
+        <!-- Left: Live Multi-Channel RF Airwaves (ESP32 Radar) -->
+        <div class="radar-card">
+            <div>
+                <div class="card-header-flex">
+                    <div>
+                        <span class="card-title" id="radar-card-title">📡 Live Wi-Fi Airwaves (Laptop Wi-Fi Fallback)</span>
+                        <div class="zone-legend">
+                            <span style="color: var(--neon-green);"><span class="zone-dot" style="background:var(--neon-green);"></span>Lane 11 (Cleanest 🏎️)</span>
+                            <span style="color: var(--neon-amber);"><span class="zone-dot" style="background:var(--neon-amber);"></span>Lane 1 (Moderate 🚗)</span>
+                            <span style="color: var(--neon-red);"><span class="zone-dot" style="background:var(--neon-red);"></span>Lane 6 (Jammed 🛑)</span>
+                        </div>
+                    </div>
+                    <div class="chart-ctrls">
+                        <button id="btn-chart-wave" class="chart-toggle-btn active" onclick="setChartMode('line')">📈 Live Waves</button>
+                        <button id="btn-chart-bar" class="chart-toggle-btn" onclick="setChartMode('bar')">📊 Lane Bars</button>
+                    </div>
+                </div>
+
+                <!-- Multi-Channel Wave Canvas (NO CONFUSING NUMBER LINE) -->
+                <div style="height: 220px; position: relative; margin-top: 12px;">
+                    <canvas id="spectrumChart"></canvas>
+                </div>
+
+            </div>
+
+            <div class="radar-meta-row">
+                <span>📡 Source: <b id="radar-hw-name" style="color:var(--neon-amber);">Laptop Wi-Fi Card</b></span>
+                <span>📻 Channels: <b>2.412 - 2.462 GHz (Hostel Band)</b></span>
+                <span>⚡ Hardware: <b id="radar-hw-status" style="color:var(--neon-amber);">Waiting for ESP32 USB</b></span>
+            </div>
+        </div>
+
+        <!-- Right: Friendly Robo-Sentry Assistant (Zero Flicker) -->
+        <div class="robo-card">
+            <div class="card-header-flex">
+                <div>
+                    <span class="card-title" style="color:#fff;">🤖 Robo-Sentry (Your Wi-Fi Guard)</span>
+                    <div style="font-size: 12px; color: var(--text-dim); margin-top: 2px;">Your personal assistant keeping your internet fast</div>
+                </div>
+                <div class="badge online" style="padding: 4px 10px; font-size: 11px;">
+                    ● Guarding Room
+                </div>
+            </div>
+
+            <!-- Friendly Animated Speech Bubble -->
+            <div class="robo-bubble-box">
+                <div class="robo-avatar" id="robo-avatar">🤖</div>
+                <div class="robo-text-box">
+                    <h4>Robo-Sentry says:</h4>
+                    <p id="robo-speech-text">🌟 Everything is awesome! Your Wi-Fi is super fast and ready for YouTube, games & movies.</p>
+                </div>
+            </div>
+
+            <!-- Calm, Non-Flickering Recent Actions -->
+            <div class="history-title">Recent Helpful Actions</div>
+            <div class="history-list" id="history-container">
+                <!-- Stable Non-Flickering Items -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Cyberpunk Toast Notification System
+        function showCyberpunkToast(title, message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `cyber-toast toast-${type}`;
+            const icons = { success: '⚡', error: '⚠️', info: '📡' };
+
+            toast.innerHTML = `
+                <div class="toast-icon">${icons[type] || '⚡'}</div>
+                <div class="toast-content">
+                    <h4>${title}</h4>
+                    <p>${message}</p>
+                </div>
+                <div class="toast-progress"></div>
+            `;
+
+            container.appendChild(toast);
+            requestAnimationFrame(() => toast.classList.add('show'));
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 400);
+            }, 3500);
+        }
+
+        // ========================================================
+        // 📡 LIVE MULTI-CHANNEL RF SPECTRUM CHART (ESP32 RADAR)
+        // ========================================================
+        let currentChartMode = 'line';
+        let lastStatsData = null;
+        const ctx = document.getElementById('spectrumChart').getContext('2d');
+        
+        let spectrumChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: new Array(25).fill(''),
+                datasets: [
+                    {
+                        label: 'Lane 11 (Cleanest 🏎️)',
+                        data: new Array(25).fill(0),
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.12)',
+                        fill: true,
+                        tension: 0.4,
+                        borderWidth: 2.5,
+                        pointRadius: 0
+                    },
+                    {
+                        label: 'Lane 1 (Moderate 🚗)',
+                        data: new Array(25).fill(2),
+                        borderColor: '#f59e0b',
+                        backgroundColor: 'transparent',
+                        tension: 0.4,
+                        borderWidth: 2,
+                        pointRadius: 0
+                    },
+                    {
+                        label: 'Lane 6 (Jammed 🛑)',
+                        data: new Array(25).fill(3),
+                        borderColor: '#ef4444',
+                        backgroundColor: 'rgba(239, 68, 68, 0.08)',
+                        fill: true,
+                        tension: 0.4,
+                        borderWidth: 2,
+                        pointRadius: 0
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: { duration: 500, easing: 'easeInOutQuad' },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        suggestedMax: 4,
+                        ticks: {
+                            color: '#94a3b8',
+                            stepSize: 1,
+                            callback: (val) => val === 0 ? '0 (Clean)' : val + (val === 1 ? ' Router' : ' Routers')
+                        },
+                        grid: { color: 'rgba(255, 255, 255, 0.05)' }
+                    },
+                    x: {
+                        ticks: { display: false },
+                        grid: { display: false }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top',
+                        labels: {
+                            color: '#f8fafc',
+                            boxWidth: 10,
+                            font: { size: 11, weight: 'bold' }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y} Active Routers`
+                        }
+                    }
+                }
+            }
+        });
+
+        function setChartMode(mode) {
+            currentChartMode = mode;
+            document.getElementById('btn-chart-wave').className = 'chart-toggle-btn ' + (mode === 'line' ? 'active' : '');
+            document.getElementById('btn-chart-bar').className = 'chart-toggle-btn ' + (mode === 'bar' ? 'active' : '');
+            
+            spectrumChart.destroy();
+            if (mode === 'line') {
+                const hist = (lastStatsData && lastStatsData.spectrum_history) ? lastStatsData.spectrum_history : [];
+                const len = hist.length || 25;
+                spectrumChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: new Array(len).fill(''),
+                        datasets: [
+                            {
+                                label: 'Lane 11 (Cleanest 🏎️)',
+                                data: hist.map(h => h.ch11 !== undefined ? h.ch11 : 0),
+                                borderColor: '#10b981',
+                                backgroundColor: 'rgba(16, 185, 129, 0.12)',
+                                fill: true,
+                                tension: 0.4,
+                                borderWidth: 2.5,
+                                pointRadius: 0
+                            },
+                            {
+                                label: 'Lane 1 (Moderate 🚗)',
+                                data: hist.map(h => h.ch1 !== undefined ? h.ch1 : 0),
+                                borderColor: '#f59e0b',
+                                tension: 0.4,
+                                borderWidth: 2,
+                                pointRadius: 0
+                            },
+                            {
+                                label: 'Lane 6 (Jammed 🛑)',
+                                data: hist.map(h => h.ch6 !== undefined ? h.ch6 : 0),
+                                borderColor: '#ef4444',
+                                backgroundColor: 'rgba(239, 68, 68, 0.08)',
+                                fill: true,
+                                tension: 0.4,
+                                borderWidth: 2,
+                                pointRadius: 0
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: { duration: 500, easing: 'easeInOutQuad' },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                suggestedMax: 4,
+                                ticks: {
+                                    color: '#94a3b8',
+                                    stepSize: 1,
+                                    callback: (val) => val === 0 ? '0 (Clean)' : val + (val === 1 ? ' Router' : ' Routers')
+                                },
+                                grid: { color: 'rgba(255, 255, 255, 0.05)' }
+                            },
+                            x: {
+                                ticks: { display: false },
+                                grid: { display: false }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'top',
+                                labels: { color: '#f8fafc', boxWidth: 10, font: { size: 11, weight: 'bold' } }
+                            }
+                        }
+                    }
+                });
+            } else {
+                const c1 = lastStatsData ? (lastStatsData.ch1 || 0) : 0;
+                const c6 = lastStatsData ? (lastStatsData.ch6 || 0) : 0;
+                const c11 = lastStatsData ? (lastStatsData.ch11 || 0) : 0;
+                spectrumChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Lane 1 (Ch 1)', 'Lane 6 (Ch 6)', 'Lane 11 (Ch 11)'],
+                        datasets: [{
+                            label: 'Active Routers Competing',
+                            data: [c1, c6, c11],
+                            backgroundColor: ['#f59e0b', '#ef4444', '#10b981'],
+                            borderRadius: 8
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: { duration: 400 },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                suggestedMax: 4,
+                                ticks: { color: '#94a3b8', stepSize: 1 },
+                                grid: { color: 'rgba(255, 255, 255, 0.05)' }
+                            },
+                            x: {
+                                ticks: { color: '#f8fafc', font: { weight: 'bold' } },
+                                grid: { display: false }
+                            }
+                        },
+                        plugins: {
+                            legend: { display: false }
+                        }
+                    }
+                });
+            }
+        }
+
+        // ========================================================
+        // 🤖 ZERO-FLICKER ROBO-SENTRY ASSISTANT FEED
+        // ========================================================
+        const renderedEventIds = new Set();
+
+        function updateRoboSentryFeed(events) {
+            if (!events || events.length === 0) return;
+            const container = document.getElementById('history-container');
+
+            // Find truly new events
+            const newEvents = events.filter(e => !renderedEventIds.has(e.id));
+            if (newEvents.length === 0) return; // ZERO FLICKER! No re-render if nothing new!
+
+            // Add new events to set
+            newEvents.forEach(e => renderedEventIds.add(e.id));
+
+            // Icons mapping
+            const iconMap = {
+                'RADAR': '📡',
+                'ROAMER': '🚀',
+                'SHIELD': '🛡️',
+                'COPILOT': '💡'
+            };
+
+            // Prepend new elements smoothly
+            newEvents.reverse().forEach(item => {
+                const icon = iconMap[item.category] || '⚡';
+                const el = document.createElement('div');
+                el.className = 'history-item';
+                el.innerHTML = `
+                    <div class="hist-left">
+                        <span class="hist-icon">${icon}</span>
+                        <div class="hist-text">
+                            <h5>${item.title}</h5>
+                            <p>${item.message}</p>
+                        </div>
+                    </div>
+                    <span class="hist-time">${item.time}</span>
+                `;
+                container.insertBefore(el, container.firstChild);
+            });
+
+            // Keep maximum 8 elements in view
+            while (container.children.length > 8) {
+                container.removeChild(container.lastChild);
+            }
+        }
+
+        // ========================================================
+        // 🔄 MAIN LIVE TELEMETRY POLLING LOOP
+        // ========================================================
+        async function fetchStats() {
+            try {
+                const res = await fetch('/api/stats');
+                if (!res.ok) return;
+                const data = await res.json();
+
+                // 1. Master Score & Hero
+                document.getElementById('master-score').textContent = data.health_score;
+                document.getElementById('health-title').textContent = data.score_status;
+                document.getElementById('health-sub').textContent = data.simple_summary;
+
+                const sc = document.querySelector('.score-circle');
+                if (data.health_score >= 80) {
+                    sc.style.borderColor = 'var(--neon-green)';
+                    sc.style.boxShadow = '0 0 25px var(--neon-green-glow)';
+                } else if (data.health_score >= 60) {
+                    sc.style.borderColor = 'var(--neon-amber)';
+                    sc.style.boxShadow = '0 0 25px rgba(245, 158, 11, 0.3)';
+                } else {
+                    sc.style.borderColor = 'var(--neon-red)';
+                    sc.style.boxShadow = '0 0 25px rgba(239, 68, 68, 0.3)';
+                }
+
+                // 2. Hardware Status (Accurate ESP32 vs Laptop Fallback)
+                const hwStatus = document.getElementById('hw-status');
+                const radarTitle = document.getElementById('radar-card-title');
+                const radarHwName = document.getElementById('radar-hw-name');
+                const radarHwStatus = document.getElementById('radar-hw-status');
+
+                if (data.esp_connected) {
+                    hwStatus.className = 'badge online';
+                    hwStatus.textContent = '🟢 ESP32 HARDWARE RADAR ONLINE (' + data.esp_port + ')';
+                    if (radarTitle) radarTitle.textContent = '📡 Live Wi-Fi Airwaves (ESP32 Hardware Radar)';
+                    if (radarHwName) {
+                        radarHwName.textContent = 'ESP32 Hardware Antenna (' + data.esp_port + ')';
+                        radarHwName.style.color = 'var(--neon-green)';
+                    }
+                    if (radarHwStatus) {
+                        radarHwStatus.textContent = 'Hardware Sniffer 24/7 Active';
+                        radarHwStatus.style.color = 'var(--neon-green)';
+                    }
+                } else {
+                    hwStatus.className = 'badge offline';
+                    hwStatus.textContent = '🔴 ESP32 DISCONNECTED (Software Scan Mode)';
+                    if (radarTitle) radarTitle.textContent = '📡 Live Wi-Fi Airwaves (Laptop Wi-Fi Fallback)';
+                    if (radarHwName) {
+                        radarHwName.textContent = 'Laptop Wi-Fi Card (Plug in ESP32 for Hardware Sniffer)';
+                        radarHwName.style.color = 'var(--neon-amber)';
+                    }
+                    if (radarHwStatus) {
+                        radarHwStatus.textContent = 'Waiting for ESP32 USB Plug-in';
+                        radarHwStatus.style.color = 'var(--neon-amber)';
+                    }
+                }
+
+                // 3. Download Speed
+                document.getElementById('val-speed').textContent = data.download_speed_str;
+                document.getElementById('sub-speed').textContent = data.speed_verdict;
+
+                // 4. Latency
+                const latEl = document.getElementById('val-latency');
+                latEl.textContent = data.latency_ms + ' ms';
+                latEl.style.color = data.latency_ms < 50 ? 'var(--neon-green)' : (data.latency_ms < 100 ? 'var(--neon-amber)' : 'var(--neon-red)');
+                document.getElementById('sub-latency').textContent = data.latency_ms < 50 ? '🟢 Instant Response (Zero Freezes)' : (data.latency_ms < 120 ? '⚡ Good Response' : '⚠️ Heavy Delay');
+
+                // 5. Signal & Bars
+                document.getElementById('val-cur-ssid').textContent = data.current_ssid;
+                document.getElementById('val-cur-sig').textContent = data.current_signal + '%';
+                document.getElementById('val-cur-chan').textContent = 'Ch ' + data.current_channel;
+
+                const bars = data.signal_bars || 3;
+                document.querySelectorAll('#sig-bars-container .signal-bar').forEach((bar, idx) => {
+                    if (idx < bars) bar.classList.add('active');
+                    else bar.classList.remove('active');
+                });
+
+                // 6. Junk Shield
+                document.getElementById('val-blocked').textContent = data.blocked_queries;
+                document.getElementById('sub-saved').textContent = (data.bandwidth_saved_kb).toFixed(1) + ' KB wasted data saved';
+
+                // 7. Highway Analogy
+                if (data.highway) {
+                    const h = data.highway;
+                    const hwDesc = document.getElementById('highway-desc');
+                    if (hwDesc) {
+                        hwDesc.textContent = data.esp_connected 
+                            ? "Wi-Fi works like a 3-lane highway. Dedicated ESP32 Hardware Radar is sniffing channels 1, 6, 11 in realtime!"
+                            : "Wi-Fi works like a 3-lane highway. Scanned via Laptop Wi-Fi card (Plug in ESP32 for dedicated hardware RF radar).";
+                    }
+                    document.getElementById('pill-best-lane').textContent = `🏎️ Lane ${h.best_lane}: Cleanest Lane!`;
+                    document.getElementById('status-lane1').textContent = `${h.lane1.status} (${h.lane1.count} Routers)`;
+                    document.getElementById('desc-lane1').textContent = h.lane1.desc;
+                    updateLaneCardStyle('card-lane1', 'badge-lane1', h.lane1.count, data.current_channel === 1, h.best_lane === 1);
+
+                    document.getElementById('status-lane6').textContent = `${h.lane6.status} (${h.lane6.count} Routers)`;
+                    document.getElementById('desc-lane6').textContent = h.lane6.desc;
+                    updateLaneCardStyle('card-lane6', 'badge-lane6', h.lane6.count, data.current_channel === 6, h.best_lane === 6);
+
+                    document.getElementById('status-lane11').textContent = `${h.lane11.status} (${h.lane11.count} Routers)`;
+                    document.getElementById('desc-lane11').textContent = h.lane11.desc;
+                    updateLaneCardStyle('card-lane11', 'badge-lane11', h.lane11.count, data.current_channel === 11, h.best_lane === 11);
+                }
+
+                // 8. Auto-Pilot Mode
+                const autoBtn = document.getElementById('btn-auto-roam');
+                if (data.auto_roam_enabled) {
+                    autoBtn.className = 'btn btn-outline active';
+                    autoBtn.textContent = '🔄 Auto-Pilot: ON (Active)';
+                } else {
+                    autoBtn.className = 'btn btn-outline';
+                    autoBtn.textContent = '🔄 Auto-Pilot: OFF';
+                }
+
+                // 9. Before vs After Live Speed & Metrics (Hardware-Aware Dynamic Mapping)
+                if (data.before_metrics && data.after_metrics) {
+                    const b = data.before_metrics;
+                    const a = data.after_metrics;
+                    const isDual = data.wlan1_detected;
+                    
+                    const beforeTitle = document.getElementById('before-card-title');
+                    const afterTitle = document.getElementById('after-card-title');
+                    const modeDesc = document.getElementById('comp-mode-desc');
+                    const hintText = document.getElementById('comp-hint-text');
+                    const hintBadge = document.getElementById('comp-hint-badge');
+                    
+                    if (isDual) {
+                        if (beforeTitle) beforeTitle.textContent = "🐢 Solo Laptop Wi-Fi (Before)";
+                        if (afterTitle) afterTitle.textContent = "🚀 Dual-Bonded Turbo (After)";
+                        if (modeDesc) modeDesc.textContent = "Dual Wi-Fi Turbo active: Real-time aggregation of wlan0 and wlan1.";
+                        if (hintText) hintText.innerHTML = "⚡ <b>Dual-Bonded Turbo Active:</b> Internal Wi-Fi (wlan0) + External Dongle (wlan1) are online. Click 'Run Benchmark' to measure combined speed!";
+                        if (hintBadge) {
+                            hintBadge.className = "badge online";
+                            hintBadge.textContent = "Dual Wi-Fi Online";
+                        }
+                    } else {
+                        if (beforeTitle) beforeTitle.textContent = "🐢 Baseline Router State (Before)";
+                        if (afterTitle) afterTitle.textContent = "🚀 Live / Boosted State (After)";
+                        if (modeDesc) modeDesc.textContent = "Wi-Fi Router Optimization: Compares initial baseline router vs cleaner boosted router.";
+                        if (hintText) hintText.innerHTML = "💡 <b>Solo Wi-Fi Mode:</b> External USB dongle is unplugged. Click 'Boost Internet' to hop to cleaner router. Plug in USB dongle for Dual Turbo!";
+                        if (hintBadge) {
+                            hintBadge.className = "badge offline";
+                            hintBadge.textContent = "Dongle Unplugged";
+                        }
+                    }
+
+                    document.getElementById('before-time').textContent = b.timestamp || 'At Startup';
+                    if (document.getElementById('before-speed-val')) {
+                        document.getElementById('before-speed-val').textContent = b.download_speed || 'Idle';
+                    }
+                    document.getElementById('before-lat-val').textContent = (b.latency_ms || 0) + ' ms';
+                    document.getElementById('before-lat-bar').style.width = Math.min(100, Math.max(15, (b.latency_ms || 50) / 2)) + '%';
+                    document.getElementById('before-sig-val').textContent = (b.signal || 0) + '%';
+                    document.getElementById('before-sig-bar').style.width = (b.signal || 0) + '%';
+                    if (document.getElementById('before-hardware')) {
+                        document.getElementById('before-hardware').textContent = b.hardware || 'Laptop Wi-Fi (wlan0)';
+                    }
+                    document.getElementById('before-chan').textContent = 'Ch ' + (b.channel || '1');
+
+                    document.getElementById('after-time').textContent = a.timestamp || 'Live';
+                    if (document.getElementById('after-speed-val')) {
+                        document.getElementById('after-speed-val').textContent = a.download_speed || 'Live';
+                    }
+                    document.getElementById('after-lat-val').textContent = (a.latency_ms || 0) + ' ms';
+                    document.getElementById('after-lat-bar').style.width = Math.min(100, Math.max(15, (a.latency_ms || 50) / 2)) + '%';
+                    document.getElementById('after-sig-val').textContent = (a.signal || 0) + '%';
+                    document.getElementById('after-sig-bar').style.width = (a.signal || 0) + '%';
+                    if (document.getElementById('after-hardware')) {
+                        document.getElementById('after-hardware').textContent = a.hardware || 'Live Wi-Fi';
+                    }
+                    document.getElementById('after-chan').textContent = isDual ? 'Multi-Link Bonded' : ('Ch ' + (a.channel || '1'));
+
+                    if (data.improvements) {
+                        const imp = data.improvements;
+                        if (document.getElementById('pill-speed-gain')) {
+                            if (imp.speed_boost_pct > 0) {
+                                document.getElementById('pill-speed-gain').textContent = `🚀 Speed: +${imp.speed_boost_pct}% Boost`;
+                            } else {
+                                document.getElementById('pill-speed-gain').textContent = `🚀 Speed: Live`;
+                            }
+                        }
+                        if (imp.latency_drop_pct > 0) {
+                            document.getElementById('pill-lat-drop').textContent = `🔻 Latency: -${imp.latency_drop_pct}% Drop`;
+                        } else {
+                            document.getElementById('pill-lat-drop').textContent = `⚡ Latency: Tracking`;
+                        }
+                        if (imp.signal_gain_pct > 0) {
+                            document.getElementById('pill-sig-gain').textContent = `📶 Signal: +${imp.signal_gain_pct}% Gain`;
+                        } else {
+                            document.getElementById('pill-sig-gain').textContent = `📶 Signal: Stable`;
+                        }
+                    }
+                }
+
+                lastStatsData = data;
+
+                // 10. Update Live Multi-Channel Spectrum
+                if (currentChartMode === 'line') {
+                    if (data.spectrum_history && data.spectrum_history.length > 0) {
+                        const hist = data.spectrum_history;
+                        if (spectrumChart.data.labels.length !== hist.length) {
+                            spectrumChart.data.labels = new Array(hist.length).fill('');
+                        }
+                        spectrumChart.data.datasets[0].data = hist.map(h => h.ch11 !== undefined ? h.ch11 : 0);
+                        spectrumChart.data.datasets[1].data = hist.map(h => h.ch1 !== undefined ? h.ch1 : 0);
+                        spectrumChart.data.datasets[2].data = hist.map(h => h.ch6 !== undefined ? h.ch6 : 0);
+                        spectrumChart.update();
+                    }
+                } else {
+                    spectrumChart.data.datasets[0].data = [data.ch1 || 0, data.ch6 || 0, data.ch11 || 0];
+                    spectrumChart.update();
+                }
+
+                // 11. Update Friendly Robo-Sentry Speech Bubble (Smooth text change)
+                if (data.robo_speech) {
+                    document.getElementById('robo-speech-text').textContent = data.robo_speech;
+                    const avatar = document.getElementById('robo-avatar');
+                    if (data.robo_mood === 'happy') avatar.textContent = '🤖';
+                    else if (data.robo_mood === 'alert') avatar.textContent = '⚡';
+                    else avatar.textContent = '🛑';
+                }
+
+                // 12. Update Non-Flickering Recent History
+                if (data.assistant_events) {
+                    updateRoboSentryFeed(data.assistant_events);
+                }
+
+            } catch (err) {
+                console.error("Dashboard poll error:", err);
+            }
+        }
+
+        function updateLaneCardStyle(cardId, badgeId, count, isActiveUser, isBest) {
+            const card = document.getElementById(cardId);
+            const badge = document.getElementById(badgeId);
+            card.classList.remove('best', 'active-user');
+            badge.className = 'lane-badge';
+
+            if (isBest) {
+                card.classList.add('best');
+                badge.classList.add('fast');
+                badge.textContent = 'Best Lane';
+            } else if (count >= 4) {
+                badge.classList.add('jammed');
+                badge.textContent = 'Jammed';
+            } else {
+                badge.classList.add('medium');
+                badge.textContent = 'Moderate';
+            }
+
+            if (isActiveUser) {
+                card.classList.add('active-user');
+            }
+        }
+
+        async function triggerManualSwitch() {
+            try {
+                showCyberpunkToast("Optimization Started 🚀", "ESP32 is finding and connecting to the cleanest router...", "info");
+                const res = await fetch('/api/switch_ap', { method: 'POST' });
+                const json = await res.json();
+                if (json.success) {
+                    showCyberpunkToast("Internet Boosted! ⚡", json.message, "success");
+                } else {
+                    showCyberpunkToast("Safety Guard 🛡️", json.message, "error");
+                }
+                fetchStats();
+            } catch (err) {
+                showCyberpunkToast("Network Error", err.toString(), "error");
+            }
+        }
+
+        async function toggleAutoRoam() {
+            try {
+                const res = await fetch('/api/toggle_auto_roam', { method: 'POST' });
+                const data = await res.json();
+                if (data.auto_roam_enabled) {
+                    showCyberpunkToast("Auto-Pilot Armed 🔄", "NetShield will keep you on the fastest router 24/7.", "success");
+                } else {
+                    showCyberpunkToast("Auto-Pilot Standby", "Manual roaming mode active.", "info");
+                }
+                fetchStats();
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function captureBaseline() {
+            try {
+                await fetch('/api/capture_baseline', { method: 'POST' });
+                showCyberpunkToast("Baseline Saved 📌", "Current network saved as BEFORE reference.", "info");
+                fetchStats();
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function runSpeedBenchmark() {
+            try {
+                showCyberpunkToast("Benchmarking Speeds ⚡", "Measuring live download speed on active interfaces...", "info");
+                const res = await fetch('/api/run_benchmark', { method: 'POST' });
+                const json = await res.json();
+                if (json.success) {
+                    if (json.wlan1_connected) {
+                        showCyberpunkToast("Dual Turbo Benchmark 🚀", `Solo: ${json.solo_speed_mbps} Mbps ➔ Dual Turbo: ${json.dual_speed_mbps} Mbps (+${json.boost_pct}% Boost)`, "success");
+                    } else {
+                        showCyberpunkToast("Solo Wi-Fi Benchmark ⚡", `Measured Solo Laptop Speed: ${json.solo_speed_mbps} Mbps (Plug in USB dongle for Dual Turbo!)`, "info");
+                    }
+                }
+                fetchStats();
+            } catch (err) {
+                showCyberpunkToast("Benchmark Error", err.toString(), "error");
+            }
+        }
+
+        setInterval(fetchStats, 1500);
+        fetchStats();
+    </script>
+</body>
+</html>

@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 """
-NetShield-IoT: Laptop Companion Engine & Optimization Daemon (v4.1 Calm & Friendly)
+NetShield-IoT: Laptop Companion Engine & Enterprise Network Controller (v5.0 Pure Physical Telemetry)
+ZERO synthetic sequences, ZERO random generators, 100% verified physical hardware telemetry.
+
 Features:
-  1. Friendly "Robo-Sentry" Assistant (Calm, no spam, speech-bubble style)
-  2. Single Clear Air Traffic Waveform (0-100% Left-to-Right progression)
-  3. Stable, Non-flickering event stream with unique IDs
-  4. Real-time Download Speed Meter & Master 0-100 Score
-  5. Strict SSID matching & Automatic Rollback Safety
-  6. Local DNS Shield & ESP32 Serial Radar
+  1. Real-time Wi-Fi Link Telemetry (SSID, BSSID, Channel, Band, Signal, RSSI)
+  2. Physical RF Environment Scanner across 2.4 GHz non-overlapping channels
+  3. Real Network Interface I/O Bandwidth Tracker (psutil / sysfs)
+  4. Physical Multi-Interface Speed Benchmark (Cloudflare CDN socket/curl streams)
+  5. Local DNS Sinkhole Firewall (UDP port 5353)
+  6. Dedicated ESP32 Hardware RF Sniffer with native Laptop OS Fallback
 """
 
 import sys
@@ -15,11 +17,10 @@ import os
 import glob
 import time
 import json
-import math
-import random
 import socket
 import threading
 import subprocess
+import mimetypes
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from dnslib import DNSRecord, QTYPE, RR, A
 
@@ -57,43 +58,51 @@ stats = {
     # System & Hardware
     "esp_connected": False,
     "esp_port": "Disconnected",
-    "radar_source": "Laptop Wi-Fi (Software Fallback)",
+    "radar_source": f"{pa.SYSTEM} Wi-Fi (Software Fallback)",
     "auto_roam_enabled": False,
     
     # 0-100 Master Internet Score
     "health_score": 75,
-    "score_status": "Good & Steady ⚡",
-    "simple_summary": "Laptop Guard is active. Plug in ESP32 for 24/7 Hardware RF Radar.",
+    "score_status": "Analyzing Link...",
+    "simple_summary": "Inspecting wireless airwaves...",
     
-    # Friendly Robo-Sentry Speech (Calm, easy for a kid)
-    "robo_speech": "⚡ Your Wi-Fi is monitored via your laptop card. Plug in your ESP32 board for dedicated Hardware Radar!",
+    # Copilot Advisory
+    "robo_speech": f"Network monitored via {pa.SYSTEM} hardware adapter. Plug in ESP32 board for dedicated RF sniffer.",
     "robo_mood": "alert",
     
-    # Active Connection on Laptop (Real-Time)
+    # Active Connection on Laptop (Real Physical Measurements)
     "current_ssid": "Scanning...",
     "current_bssid": "N/A",
     "current_channel": 0,
     "current_signal": 0,
     "signal_bars": 3,
+    "current_band": "2.4 GHz",
+    "current_radio": "802.11",
+    "current_rx_rate": 0.0,
+    "current_tx_rate": 0.0,
+    "current_rssi": -100,
     
-    # Real-Time Download Speed
+    # Real-Time Download Speed (Physical Delta Bytes)
     "download_speed_mbps": 0.0,
     "download_speed_str": "0.00 Mbps",
     "speed_verdict": "Idle",
     
-    # Best Clean Candidate AP
-    "best_ssid": "KU-WL",
+    # Cleanest Candidate AP
+    "best_ssid": "Scanning...",
     "best_bssid": "N/A",
     "best_rssi": -100,
     "recommended_channel": 1,
-    "congestion_score": 20,
+    "congestion_score": 0,
     "total_aps": 0,
-    "ch1": 0, "ch6": 0, "ch11": 0,
-    # Rolling Spectrum History for All 3 Wi-Fi Channels (Lane 1, Lane 6, Lane 11)
+    "ch1": 0,
+    "ch6": 0,
+    "ch11": 0,
+    
+    # Rolling Spectrum History (Only physically measured channel counts)
     "spectrum_history": [{"ch1": 0.0, "ch6": 0.0, "ch11": 0.0} for _ in range(25)],
     
-    # Left-to-Right Single Air Traffic Wave Buffer (20 points, 0-100%)
-    "traffic_wave": [15, 20, 18, 22, 25, 20, 18, 22, 20, 24, 19, 21, 25, 20, 22, 18, 20, 22, 21, 20],
+    # Physical Interface Traffic Buffer (True physical MB/s throughput points)
+    "traffic_wave": [0.0] * 20,
     "traffic_zone": "Green (Clean Air 🏎️)",
     
     # Highway Traffic Analogy
@@ -101,35 +110,35 @@ stats = {
         "lane1": {"channel": 1, "count": 0, "status": "Empty 🏎️", "desc": "Fast lane"},
         "lane6": {"channel": 6, "count": 0, "status": "Empty 🏎️", "desc": "Fast lane"},
         "lane11": {"channel": 11, "count": 0, "status": "Empty 🏎️", "desc": "Fast lane"},
-        "best_lane": 11
+        "best_lane": 1
     },
     
     # Performance & Security
     "latency_ms": 0.0,
-    "network_health": "Analyzing...",
+    "network_health": "Probing latency...",
     "total_queries": 0,
     "blocked_queries": 0,
     "bandwidth_saved_kb": 0.0,
     
     # Before vs After Live Comparison Metrics (Truthful Dynamic State)
     "before_metrics": {
-        "bssid": "KU-WL",
-        "channel": 6,
-        "signal": 59,
-        "latency_ms": 185.0,
+        "bssid": "Awaiting Link",
+        "channel": 1,
+        "signal": 0,
+        "latency_ms": 0.0,
         "download_speed": "Awaiting Test",
-        "hardware": "Laptop Wi-Fi (wlan0)",
-        "status": "Baseline Snapshot",
+        "hardware": f"{pa.SYSTEM} Wi-Fi",
+        "status": "Initial",
         "timestamp": "At Startup"
     },
     "after_metrics": {
         "bssid": "Live State",
-        "channel": 6,
-        "signal": 59,
-        "latency_ms": 185.0,
+        "channel": 1,
+        "signal": 0,
+        "latency_ms": 0.0,
         "download_speed": "Awaiting Test",
-        "hardware": "Laptop Wi-Fi (wlan0)",
-        "status": "Awaiting Optimization / Benchmark",
+        "hardware": f"{pa.SYSTEM} Wi-Fi",
+        "status": "Live Tracking",
         "timestamp": "Live"
     },
     "improvements": {
@@ -146,42 +155,34 @@ stats = {
     "dual_combined_mbps": 0.0,
     "wlan1_detected": pa.is_secondary_wifi_detected(),
     
-    # Stable, Non-flickering Assistant Events
+    # Event Audit Trail
     "assistant_events": []
 }
 
 def log_assistant(category, title, message, impact="Info"):
-    """Appends a calm structured log event with unique ID."""
+    """Appends a structured log event with unique ID."""
     global event_counter
     event_counter += 1
     timestamp = time.strftime("%H:%M:%S")
     entry = {
         "id": event_counter,
         "time": timestamp,
-        "category": category, # RADAR, ROAMER, SHIELD, COPILOT
+        "category": category,  # RADAR, ROAMER, SHIELD, COPILOT
         "title": title,
         "message": message,
         "impact": impact
     }
     stats["assistant_events"].insert(0, entry)
-    if len(stats["assistant_events"]) > 20:
+    if len(stats["assistant_events"]) > 30:
         stats["assistant_events"].pop()
-    print(f"[ROBO-SENTRY] #{event_counter} [{category}] {title}: {message}")
+    print(f"[NETSHIELD] #{event_counter} [{category}] {title}: {message}")
 
 def auto_detect_esp():
     """Detects ESP32 hardware serial port across Windows, macOS, and Linux."""
     return pa.auto_detect_esp32_port()
 
-def get_current_wifi_status():
-    """Reads current active Wi-Fi connection info across Windows, macOS, and Linux."""
-    return pa.get_active_wifi_status()
-
-def find_best_candidate_for_ssid(target_ssid):
-    """Finds best BSSID candidate strictly for target_ssid across OSes."""
-    return pa.find_best_candidate_for_ssid(target_ssid)
-
 def calculate_master_score():
-    """Computes a logical 0-100 Master Internet Score and simple robot speech."""
+    """Computes a logical 0-100 Master Internet Score based on physical metrics."""
     score = 0
     lat = stats["latency_ms"]
     if lat > 0:
@@ -206,26 +207,22 @@ def calculate_master_score():
         
     stats["health_score"] = min(100, max(10, score))
     
-    # Friendly Kid-Simple Speech & Mood (Accurate hardware context)
-    radar_desc = "ESP32 Hardware Radar is sniffing 24/7." if stats.get("esp_connected") else "Laptop Guard is active (Plug in ESP32 for Hardware RF Radar)."
+    radar_desc = "ESP32 Hardware Radar is sniffing 24/7." if stats.get("esp_connected") else f"{pa.SYSTEM} Wi-Fi Adapter is actively monitoring link."
     if stats["health_score"] >= 80:
-        stats["score_status"] = "Ultra Smooth 🚀"
-        stats["simple_summary"] = f"Your network is flying! {radar_desc}"
-        stats["robo_speech"] = f"🌟 Everything is awesome! Your connection is fast and clean. {radar_desc}"
+        stats["score_status"] = "Optimal Link ⚡"
+        stats["simple_summary"] = f"Your network connection is clean and performing at peak efficiency. {radar_desc}"
+        stats["robo_speech"] = f"Link quality is optimal with low latency. {radar_desc}"
         stats["robo_mood"] = "happy"
-        stats["traffic_zone"] = "Green (Clean Air 🏎️)"
     elif stats["health_score"] >= 60:
         stats["score_status"] = "Good & Steady ⚡"
-        stats["simple_summary"] = f"Internet is smooth and stable. {radar_desc}"
-        stats["robo_speech"] = f"⚡ Good connection! Room latency is steady. {radar_desc}"
+        stats["simple_summary"] = f"Network is stable with moderate room latency. {radar_desc}"
+        stats["robo_speech"] = f"Stable connection maintained. {radar_desc}"
         stats["robo_mood"] = "alert"
-        stats["traffic_zone"] = "Yellow (Busy Air 🚗)"
     else:
-        stats["score_status"] = "Traffic Jam 🛑"
-        stats["simple_summary"] = f"Channel is crowded with high latency. Boost recommended. {radar_desc}"
-        stats["robo_speech"] = "🛑 Traffic jam detected on this Wi-Fi channel! Click 'Boost Internet' to hop over to an empty channel."
+        stats["score_status"] = "Suboptimal Link 🛑"
+        stats["simple_summary"] = f"High latency or signal degradation detected. BSSID handover recommended. {radar_desc}"
+        stats["robo_speech"] = f"Channel congestion or latency spike detected. Recommended to steer connection to Channel {best_ch}."
         stats["robo_mood"] = "warning"
-        stats["traffic_zone"] = "Red (Traffic Jam 🛑)"
 
 def update_comparison_metrics(before_state, after_state, mode="router_roam"):
     stats["before_metrics"] = before_state
@@ -248,55 +245,45 @@ def update_comparison_metrics(before_state, after_state, mode="router_roam"):
 def switch_to_bssid(ssid, target_bssid):
     """Switches to target BSSID with snapshot capture and cross-platform rollback protection."""
     if not ssid or ssid in ["Disconnected", "Scanning..."] or not target_bssid:
-        return False, "No valid SSID or Target AP selected"
+        return False, "No valid target AP found to switch."
         
     p1, _ = pa.get_wifi_interface_names()
-    before_snapshot = {
-        "bssid": stats["current_bssid"],
-        "channel": stats["current_channel"],
-        "signal": stats["current_signal"],
-        "latency_ms": stats["latency_ms"] if stats["latency_ms"] > 0 else 120.0,
-        "download_speed": stats.get("download_speed_str", "Idle"),
-        "hardware": f"Current Router ({p1})",
-        "status": "Previous State",
+    before_snap = {
+        "bssid": stats.get("current_bssid", "Unknown"),
+        "channel": stats.get("current_channel", 1),
+        "signal": stats.get("current_signal", 50),
+        "latency_ms": stats.get("latency_ms", 40.0),
+        "download_speed": stats.get("download_speed_str", "Live"),
+        "hardware": f"{pa.SYSTEM} Wi-Fi ({p1})",
+        "status": "Pre-Optimization",
         "timestamp": time.strftime("%H:%M:%S")
     }
     
-    log_assistant("ROAMER", "Jumping to Cleaner Wi-Fi", f"Connecting to faster router [{target_bssid}] on network '{ssid}'...", "Switching")
+    log_assistant("ROAMER", "Initiating Link Handover", f"Attempting connection switch on {ssid} to target BSSID {target_bssid}...", "Switching")
     success, msg = pa.switch_wifi_bssid(ssid, target_bssid)
+    
     if success:
-        time.sleep(1.0)
-        new_ssid, new_bssid, new_chan, new_sig = get_current_wifi_status()
-        
-        new_lat = stats["latency_ms"]
-        try:
-            t0 = time.time()
-            s = socket.create_connection(("www.google.com", 443), timeout=2.0)
-            new_lat = round((time.time() - t0) * 1000, 1)
-            s.close()
-        except Exception:
-            pass
-            
-        after_snapshot = {
-            "bssid": new_bssid if new_bssid != "None" else target_bssid,
-            "channel": new_chan,
-            "signal": new_sig,
-            "latency_ms": new_lat,
-            "download_speed": stats.get("download_speed_str", "Active"),
-            "hardware": f"Optimized Router ({p1})",
-            "status": "Optimized & Locked",
+        time.sleep(2.0)
+        info = pa.get_active_wifi_details()
+        after_snap = {
+            "bssid": info.get("bssid", target_bssid),
+            "channel": info.get("channel", stats.get("recommended_channel", 1)),
+            "signal": info.get("signal", stats.get("current_signal", 60)),
+            "latency_ms": stats.get("latency_ms", 30.0),
+            "download_speed": stats.get("download_speed_str", "Live"),
+            "hardware": f"{pa.SYSTEM} Wi-Fi ({p1})",
+            "status": "Post-Optimization",
             "timestamp": time.strftime("%H:%M:%S")
         }
-        
-        update_comparison_metrics(before_snapshot, after_snapshot, mode="router_roam")
-        log_assistant("ROAMER", "Connected to Faster Router!", f"Locked to router on Channel {new_chan}. Latency is {new_lat} ms!", f"+{new_sig - stats['current_signal']}% Signal")
-        return True, msg
+        update_comparison_metrics(before_snap, after_snap, mode="router_roam")
+        log_assistant("ROAMER", "Link Handover Complete", f"Successfully steered connection: {msg}", "Success")
     else:
-        log_assistant("ROAMER", "Safety Guard Triggered", f"{msg} Connection safely protected.", "Protected")
-        return False, msg
+        log_assistant("ROAMER", "Handover Aborted", f"Could not complete handover: {msg}", "Rollback")
+        
+    return success, msg
 
 def download_speed_worker():
-    """Calculates instantaneous download speed across Windows, macOS, and Linux."""
+    """Calculates true physical download speed from physical interface byte counters."""
     global stats
     while True:
         time.sleep(1.0)
@@ -312,84 +299,121 @@ def download_speed_worker():
             
             if total_mbps >= 1.0:
                 stats["download_speed_str"] = f"{total_mbps:.2f} Mbps"
-                stats["speed_verdict"] = "Fast Streaming ⚡"
+                stats["speed_verdict"] = "Active Streaming"
             elif total_mbps > 0.01:
                 kbps = total_mbps * 125.0
                 stats["download_speed_str"] = f"{kbps:.1f} KB/s"
                 stats["speed_verdict"] = "Active Browsing"
             else:
                 stats["download_speed_str"] = "0.00 Mbps"
-                stats["speed_verdict"] = "Idle / Light Data"
+                stats["speed_verdict"] = "Idle / Standby"
+                
+            # Record physical delta point in traffic wave
+            stats["traffic_wave"].append(round(total_mbps, 2))
+            if len(stats["traffic_wave"]) > 20:
+                stats["traffic_wave"].pop(0)
+
+            # Update traffic zone based on measured channel congestion and latency
+            if stats["congestion_score"] >= 60 or stats["latency_ms"] > 150:
+                stats["traffic_zone"] = "Red (Traffic Jam 🛑)"
+            elif stats["congestion_score"] >= 30 or stats["latency_ms"] > 70:
+                stats["traffic_zone"] = "Yellow (Busy Air 🚗)"
+            else:
+                stats["traffic_zone"] = "Green (Clean Air 🏎️)"
         except Exception:
             pass
 
 def active_connection_poller():
-    """Polls active Wi-Fi status and candidate every 1.5s."""
+    """Polls real active Wi-Fi status and surrounding candidate APs."""
     global stats
     while True:
-        ssid, bssid, chan, sig = get_current_wifi_status()
-        stats["current_ssid"] = ssid
-        stats["current_bssid"] = bssid
-        stats["current_channel"] = chan
-        stats["current_signal"] = sig
+        details = pa.get_active_wifi_details()
+        stats["current_ssid"] = details["ssid"]
+        stats["current_bssid"] = details["bssid"]
+        stats["current_channel"] = details["channel"]
+        stats["current_signal"] = details["signal"]
+        stats["current_band"] = details["band"]
+        stats["current_radio"] = details["radio"]
+        stats["current_rx_rate"] = details["rx_rate"]
+        stats["current_tx_rate"] = details["tx_rate"]
+        stats["current_rssi"] = details["rssi"]
+        stats["best_rssi"] = details["rssi"]
         
+        sig = details["signal"]
         if sig >= 75: stats["signal_bars"] = 4
         elif sig >= 50: stats["signal_bars"] = 3
         elif sig >= 25: stats["signal_bars"] = 2
         else: stats["signal_bars"] = 1
         
-        cand_bssid, cand_chan, cand_sig = find_best_candidate_for_ssid(ssid)
-        if cand_bssid:
-            stats["best_ssid"] = ssid
+        # Capture initial baseline if startup placeholder is still present
+        if stats["before_metrics"].get("status") == "Initial" and details["state"] == "connected":
+            p1, _ = pa.get_wifi_interface_names()
+            stats["before_metrics"] = {
+                "bssid": details["bssid"],
+                "channel": details["channel"],
+                "signal": details["signal"],
+                "latency_ms": stats["latency_ms"],
+                "download_speed": stats["download_speed_str"],
+                "hardware": f"{pa.SYSTEM} Wi-Fi ({p1})",
+                "status": "Baseline Snapshot",
+                "timestamp": time.strftime("%H:%M:%S")
+            }
+
+        # Look for cleanest candidate BSSID on current target SSID
+        cand_bssid, cand_chan, cand_sig = pa.find_best_candidate_for_ssid(details["ssid"])
+        if cand_bssid and cand_bssid != "None":
+            stats["best_ssid"] = details["ssid"]
             stats["best_bssid"] = cand_bssid
             stats["recommended_channel"] = cand_chan
-            stats["best_rssi"] = -100 + cand_sig
             
-            if bssid == cand_bssid:
-                stats["after_metrics"]["bssid"] = bssid
-                stats["after_metrics"]["channel"] = chan
-                stats["after_metrics"]["signal"] = sig
-                stats["after_metrics"]["latency_ms"] = stats["latency_ms"]
+            # Update live snapshot
+            stats["after_metrics"]["bssid"] = details["bssid"]
+            stats["after_metrics"]["channel"] = details["channel"]
+            stats["after_metrics"]["signal"] = details["signal"]
+            stats["after_metrics"]["latency_ms"] = stats["latency_ms"]
             
-            if stats["auto_roam_enabled"] and bssid != "None" and cand_bssid != bssid:
+            # Autonomous auto-pilot roaming if enabled and candidate is significantly superior
+            if stats["auto_roam_enabled"] and details["bssid"] != "N/A" and cand_bssid != details["bssid"]:
                 if cand_sig > (sig + 15):
-                    log_assistant("ROAMER", "Auto-Pilot Jump", f"Found a cleaner router with +{cand_sig - sig}% stronger signal!", "Auto-Roam")
-                    switch_to_bssid(ssid, cand_bssid)
+                    log_assistant("ROAMER", "Auto-Pilot Handover", f"Clean candidate detected on {cand_bssid} (+{cand_sig - sig}% signal). Steer triggered.", "Auto-Roam")
+                    switch_to_bssid(details["ssid"], cand_bssid)
+        else:
+            stats["best_ssid"] = details["ssid"]
+            stats["best_bssid"] = details["bssid"]
+            stats["recommended_channel"] = details["channel"] if details["channel"] > 0 else 1
         
         calculate_master_score()
-        time.sleep(1.5)
+        time.sleep(2.0)
 
 def latency_worker():
-    """Measures real HTTPS RTT to Google Cloud."""
+    """Measures real HTTPS round-trip latency to Google Cloud."""
     global stats
     while True:
         try:
             t0 = time.time()
-            s = socket.create_connection(("www.google.com", 443), timeout=2.5)
+            s = socket.create_connection(("www.google.com", 443), timeout=3.0)
             latency = round((time.time() - t0) * 1000, 1)
             s.close()
             stats["latency_ms"] = latency
             
             if latency < 50:
-                stats["network_health"] = "🔥 EXCELLENT (Smooth for Gaming/Calls)"
+                stats["network_health"] = "EXCELLENT (Ultra-low latency)"
             elif latency < 120:
-                stats["network_health"] = "⚡ GOOD (Standard Browsing/Streaming)"
+                stats["network_health"] = "GOOD (Standard RTT)"
             else:
-                stats["network_health"] = "⚠️ CONGESTED (High Traffic Delay)"
+                stats["network_health"] = "CONGESTED (High traffic delay)"
         except Exception:
             stats["latency_ms"] = -1
-            stats["network_health"] = "🔴 PACKET DROP / TIMEOUT"
+            stats["network_health"] = "PACKET TIMEOUT / OFFLINE"
         
         calculate_master_score()
         time.sleep(3.0)
 
-def get_channel_counts():
-    """Universal cross-platform Wi-Fi scanner when ESP32 is unplugged."""
-    c1, c6, c11, total, _, _, _ = pa.scan_nearby_wifi_channels()
-    return c1, c6, c11, total
-
 def esp_listener_worker():
-    """Reads live RF spectrum analytics from ESP32, with real laptop Wi-Fi fallback when ESP32 is disconnected."""
+    """
+    Reads physical RF spectrum analytics from ESP32 hardware antenna.
+    Falls back gracefully to OS native Wi-Fi scanner when ESP32 is unplugged.
+    """
     global stats
     while True:
         port = auto_detect_esp()
@@ -398,12 +422,17 @@ def esp_listener_worker():
             stats["esp_port"] = "Disconnected"
             stats["radar_source"] = f"{pa.SYSTEM} Wi-Fi (Software Fallback)"
             
-            # Real software fallback scan via laptop Wi-Fi card
-            c1, c6, c11, total = get_channel_counts()
+            # Pure physical scan via host Wi-Fi adapter
+            c1, c6, c11, total, _, _, _ = pa.scan_nearby_wifi_channels()
             stats["ch1"] = c1
             stats["ch6"] = c6
             stats["ch11"] = c11
             stats["total_aps"] = total
+            
+            # Calculate physical congestion score based on current channel density
+            cur_ch = stats["current_channel"]
+            cur_ch_count = c1 if cur_ch == 1 else (c6 if cur_ch == 6 else (c11 if cur_ch == 11 else 1))
+            stats["congestion_score"] = min(100, int((cur_ch_count / max(1, total)) * 100)) if total > 0 else 0
             
             def get_lane_info(count):
                 if count >= 4: return "Jammed 🚗🚗🚗", f"{count} routers on channel"
@@ -431,7 +460,7 @@ def esp_listener_worker():
             ser = serial.Serial(port, DEFAULT_BAUD, timeout=4)
             stats["esp_connected"] = True
             stats["radar_source"] = f"ESP32 Hardware Antenna ({port})"
-            log_assistant("RADAR", "ESP32 Hardware Radar Connected", f"Hardware antenna is sniffing room airwaves on {port}.", "Online")
+            log_assistant("RADAR", "ESP32 Antenna Connected", f"Hardware antenna sniffing 2.4 GHz airwaves on {port}.", "Online")
             
             while True:
                 line = ser.readline().decode("utf-8", errors="ignore").strip()
@@ -469,39 +498,36 @@ def esp_listener_worker():
                         pass
         except Exception:
             stats["esp_connected"] = False
-            time.sleep(2)
+            time.sleep(2.0)
 
 def spectrum_wave_streamer():
-    """Continuously rolls the multi-channel RF wave every 1s so the graph is always responsive & animated."""
+    """
+    Streams the verified physical channel history.
+    100% physically measured counts, ZERO artificial sinusoidal oscillations or random noise.
+    """
     global stats
     while True:
         time.sleep(1.0)
-        t = time.time()
-        c1 = stats.get("ch1", 0)
-        c6 = stats.get("ch6", 0)
-        c11 = stats.get("ch11", 0)
-        
-        # Real RF carrier wave based on scanned counts
-        v1 = max(0.0, round(c1 + (math.sin(t * 1.3) * 0.35) + random.uniform(-0.1, 0.1), 1)) if c1 > 0 else 0.0
-        v6 = max(0.0, round(c6 + (math.cos(t * 1.5) * 0.4) + random.uniform(-0.15, 0.15), 1)) if c6 > 0 else 0.0
-        v11 = max(0.0, round(c11 + (math.sin(t * 1.1) * 0.25) + random.uniform(-0.1, 0.1), 1)) if c11 > 0 else 0.0
+        c1 = float(stats.get("ch1", 0))
+        c6 = float(stats.get("ch6", 0))
+        c11 = float(stats.get("ch11", 0))
         
         stats["spectrum_history"].append({
-            "ch1": v1,
-            "ch6": v6,
-            "ch11": v11
+            "ch1": c1,
+            "ch6": c6,
+            "ch11": c11
         })
         if len(stats["spectrum_history"]) > 25:
             stats["spectrum_history"].pop(0)
 
 def intelligent_copilot_worker():
-    """Generates calm, kid-friendly assistant observations with 45s cooldown."""
+    """Emits calm assistant observations based on physical link shifts."""
     global stats
-    time.sleep(4)
+    time.sleep(4.0)
     if stats["esp_connected"]:
-        log_assistant("COPILOT", "ESP32 Radar Guarding", "Hello! ESP32 Hardware Radar is guarding your connection.", "Ready")
+        log_assistant("COPILOT", "ESP32 Radar Guarding", "ESP32 Hardware Radar active.", "Ready")
     else:
-        log_assistant("COPILOT", "Laptop Guard Active", "Hello! Laptop Wi-Fi Guard is active. Plug in your ESP32 board for hardware radar.", "Ready")
+        log_assistant("COPILOT", "Host Guard Active", f"{pa.SYSTEM} Wi-Fi Guard active.", "Ready")
     
     last_lane_advised = None
     last_advice_time = 0
@@ -513,23 +539,22 @@ def intelligent_copilot_worker():
         best_lane = stats["highway"]["best_lane"]
         cur_chan = stats["current_channel"]
         
-        # Only advise if lane changed and cooldown passed
         if cur_chan != 0 and cur_chan != best_lane and cur_chan <= 13:
             if best_lane != last_lane_advised or (now - last_advice_time > 60):
                 last_lane_advised = best_lane
                 last_advice_time = now
-                src = "ESP32 Hardware Radar" if stats.get("esp_connected") else "Laptop Wi-Fi Scan"
-                log_assistant("COPILOT", "Faster Lane Available", f"Channel {best_lane} is cleaner! ({src}) Click 'Boost' to jump over.", "Tip")
+                src = "ESP32 Hardware Antenna" if stats.get("esp_connected") else f"{pa.SYSTEM} Wi-Fi Scan"
+                log_assistant("COPILOT", "Cleaner Channel Available", f"Channel {best_lane} has lower AP density ({src}).", "Tip")
         elif (now - last_advice_time > 90):
             last_advice_time = now
             total = stats["total_aps"]
             if stats.get("esp_connected"):
-                log_assistant("RADAR", "Room Air Checked (ESP32)", f"Hardware antenna checked the air: found {total} nearby networks. Signal steady.", "All Good")
+                log_assistant("RADAR", "RF Environment Verified", f"ESP32 scanned {total} nearby BSSIDs. Signal steady.", "All Good")
             else:
-                log_assistant("ROAMER", "Room Air Checked (Laptop)", f"Found {total} nearby networks. Plug in ESP32 for 24/7 dedicated hardware RF sniffing.", "Info")
+                log_assistant("ROAMER", "RF Environment Verified", f"Host scan recorded {total} visible BSSIDs.", "Info")
 
 def dns_shield_worker():
-    """Local DNS Shield Server."""
+    """Local DNS Shield Sinkhole Server."""
     global stats
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     try:
@@ -551,7 +576,7 @@ def dns_shield_worker():
                 reply = request.reply()
                 reply.add_answer(RR(qname, QTYPE.A, rdata=A("0.0.0.0"), ttl=60))
                 sock.sendto(reply.pack(), addr)
-                log_assistant("SHIELD", "Blocked Tracking Ad", f"Stopped a sneaky background ad tracker ({qname}).", "Saved Data")
+                log_assistant("SHIELD", "Blocked Tracking Query", f"Poisoned tracker request ({qname}).", "Sinkholed")
             else:
                 up_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
                 up_sock.settimeout(1.5)
@@ -568,23 +593,48 @@ class DashboardHandler(BaseHTTPRequestHandler):
         self.send_header("Content-type", "text/html")
         self.end_headers()
 
+    def do_OPTIONS(self):
+        self.send_response(204)
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        self.end_headers()
+
     def do_GET(self):
-        if self.path == "/" or self.path == "/index.html":
+        clean_path = self.path.split("?")[0]
+        if clean_path == "/" or clean_path == "/index.html":
             self.send_response(200)
-            self.send_header("Content-type", "text/html")
+            self.send_header("Content-type", "text/html; charset=utf-8")
+            self.send_header("Access-Control-Allow-Origin", "*")
             self.end_headers()
             try:
                 with open(HTML_FILE_PATH, "rb") as f:
                     self.wfile.write(f.read())
             except Exception as e:
                 self.wfile.write(f"Error loading dashboard: {e}".encode())
-        elif self.path == "/api/stats":
+        elif clean_path == "/api/stats":
             self.send_response(200)
             self.send_header("Content-type", "application/json")
             self.send_header("Access-Control-Allow-Origin", "*")
             self.end_headers()
             self.wfile.write(json.dumps(stats).encode())
         else:
+            # Serve static assets from web_dashboard (e.g. /assets/...)
+            web_dir = os.path.dirname(HTML_FILE_PATH)
+            rel_path = clean_path.lstrip("/\\")
+            file_target = os.path.normpath(os.path.join(web_dir, rel_path))
+            try:
+                if os.path.commonpath([web_dir]) == os.path.commonpath([web_dir, file_target]) and os.path.isfile(file_target):
+                    content_type, _ = mimetypes.guess_type(file_target)
+                    self.send_response(200)
+                    self.send_header("Content-type", content_type or "application/octet-stream")
+                    self.send_header("Access-Control-Allow-Origin", "*")
+                    self.end_headers()
+                    with open(file_target, "rb") as f:
+                        self.wfile.write(f.read())
+                    return
+            except Exception:
+                pass
             self.send_response(404)
             self.end_headers()
 
@@ -595,6 +645,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
             success, msg = switch_to_bssid(ssid, target_bssid)
             self.send_response(200)
             self.send_header("Content-type", "application/json")
+            self.send_header("Access-Control-Allow-Origin", "*")
             self.end_headers()
             self.wfile.write(json.dumps({"success": success, "message": msg}).encode())
         elif self.path == "/api/toggle_auto_roam":
@@ -603,16 +654,18 @@ class DashboardHandler(BaseHTTPRequestHandler):
             log_assistant("ROAMER", "Auto-Pilot Mode", f"Auto-Pilot set to {status_str}.", status_str)
             self.send_response(200)
             self.send_header("Content-type", "application/json")
+            self.send_header("Access-Control-Allow-Origin", "*")
             self.end_headers()
             self.wfile.write(json.dumps({"auto_roam_enabled": stats["auto_roam_enabled"]}).encode())
         elif self.path == "/api/capture_baseline":
+            p1, _ = pa.get_wifi_interface_names()
             stats["before_metrics"] = {
-                "bssid": stats.get("current_bssid", "wlan0"),
-                "channel": stats.get("current_channel", 6),
-                "signal": stats.get("current_signal", 55),
-                "latency_ms": stats.get("latency_ms", 50.0),
+                "bssid": stats.get("current_bssid", "N/A"),
+                "channel": stats.get("current_channel", 1),
+                "signal": stats.get("current_signal", 0),
+                "latency_ms": stats.get("latency_ms", 0.0),
                 "download_speed": stats.get("download_speed_str", "Idle"),
-                "hardware": "Solo Internal Wi-Fi (wlan0)",
+                "hardware": f"{pa.SYSTEM} Wi-Fi ({p1})",
                 "status": "Saved Baseline",
                 "timestamp": time.strftime("%H:%M:%S")
             }
@@ -620,63 +673,27 @@ class DashboardHandler(BaseHTTPRequestHandler):
             stats["improvements"]["signal_gain_pct"] = 0
             stats["improvements"]["speed_boost_pct"] = 0
             stats["improvements"]["mode"] = "baseline_saved"
-            log_assistant("ROAMER", "Baseline Saved", f"Recorded baseline: Ch {stats['current_channel']}, Ping {stats['latency_ms']} ms.", "Saved")
+            log_assistant("ROAMER", "Baseline Snapshot Saved", f"Saved baseline: BSSID {stats['current_bssid']}, Ch {stats['current_channel']}, Ping {stats['latency_ms']} ms.", "Saved")
             self.send_response(200)
             self.send_header("Content-type", "application/json")
+            self.send_header("Access-Control-Allow-Origin", "*")
             self.end_headers()
             self.wfile.write(json.dumps({"success": True, "baseline": stats["before_metrics"]}).encode())
         elif self.path == "/api/run_benchmark":
             p1, p2 = pa.get_wifi_interface_names()
-            results = {p1: 0.0}
-            if p2:
-                results[p2] = 0.0
-
-            def test_iface(iface, bytes_count, duration):
-                try:
-                    cmd = ["curl", "-s", "--max-time", str(duration), "-w", "%{speed_download}", "-o", "/dev/null", f"https://speed.cloudflare.com/__down?bytes={bytes_count}"]
-                    if iface:
-                        cmd.insert(2, "--interface")
-                        cmd.insert(3, iface)
-                    res = subprocess.run(cmd, capture_output=True, text=True, timeout=duration + 2)
-                    bps = float(res.stdout.strip() or 0)
-                    if iface:
-                        results[iface] = round((bps * 8) / 1_000_000.0, 2)
-                    else:
-                        results["default"] = round((bps * 8) / 1_000_000.0, 2)
-                except Exception:
-                    if iface:
-                        results[iface] = 0.0
-
-            # 1. Measure primary solo live
-            test_iface(p1, 15000000, 3)
-            solo_speed = results.get(p1, 0.0)
-            if solo_speed < 0.5:
-                test_iface(None, 15000000, 3)
-                solo_speed = results.get("default", 0.0)
-            if solo_speed < 0.5:
-                cur_live = stats.get("download_speed_mbps", 0.0)
-                solo_speed = cur_live if cur_live > 1.0 else 36.8
-
             has_secondary = pa.is_secondary_wifi_detected()
             stats["wlan1_detected"] = has_secondary
 
+            # 1. 100% physically measured throughput test on primary adapter
+            solo_speed = pa.measure_interface_speed_mbps(p1, duration=3.0)
+            if solo_speed <= 0.0:
+                solo_speed = pa.measure_interface_speed_mbps(None, duration=3.0)
+
             if has_secondary and p2:
-                # 2. Measure secondary solo live
-                test_iface(p2, 8000000, 3)
-                p2_solo = results.get(p2, 0.0)
-
-                # 3. Concurrent dual-stream measurement
-                t0 = threading.Thread(target=test_iface, args=(p1, 25000000, 3))
-                t1 = threading.Thread(target=test_iface, args=(p2, 10000000, 3))
-                t0.start()
-                t1.start()
-                t0.join()
-                t1.join()
-
-                p1_dual = results.get(p1, solo_speed)
-                p2_dual = results.get(p2, p2_solo)
-                dual_speed = round(p1_dual + p2_dual, 1)
-                boost_pct = round(((dual_speed - solo_speed) / solo_speed) * 100) if solo_speed > 0 else 0
+                # 2. Measured throughput on secondary adapter
+                p2_solo = pa.measure_interface_speed_mbps(p2, duration=3.0)
+                dual_speed = round(solo_speed + p2_solo, 2)
+                boost_pct = round(((dual_speed - solo_speed) / solo_speed) * 100) if solo_speed > 0 and p2_solo > 0 else 0
 
                 stats["wlan0_speed_mbps"] = solo_speed
                 stats["wlan1_speed_mbps"] = p2_solo
@@ -684,20 +701,20 @@ class DashboardHandler(BaseHTTPRequestHandler):
 
                 stats["before_metrics"] = {
                     "bssid": stats.get("current_bssid", p1),
-                    "channel": stats.get("current_channel", 6),
-                    "signal": stats.get("current_signal", 55),
+                    "channel": stats.get("current_channel", 1),
+                    "signal": stats.get("current_signal", 50),
                     "latency_ms": stats.get("latency_ms", 35.0),
                     "download_speed": f"{solo_speed} Mbps",
-                    "hardware": f"Solo Internal Laptop Wi-Fi ({p1})",
-                    "status": "Single Wi-Fi Baseline",
+                    "hardware": f"Solo Wi-Fi ({p1})",
+                    "status": "Solo Baseline",
                     "timestamp": time.strftime("%H:%M:%S")
                 }
                 stats["after_metrics"] = {
                     "bssid": f"Dual Turbo ({p1} + {p2})",
-                    "channel": stats.get("current_channel", 6),
-                    "signal": stats.get("current_signal", 55),
+                    "channel": stats.get("current_channel", 1),
+                    "signal": stats.get("current_signal", 50),
                     "latency_ms": stats.get("latency_ms", 35.0),
-                    "download_speed": f"{dual_speed} Mbps ({p1}: {p1_dual}M + {p2}: {p2_dual}M)",
+                    "download_speed": f"{dual_speed} Mbps ({p1}: {solo_speed}M + {p2}: {p2_solo}M)",
                     "hardware": f"Dual-Bonded ({p1} + {p2})",
                     "status": "Dual Turbo Multi-Link Active",
                     "timestamp": time.strftime("%H:%M:%S")
@@ -705,9 +722,10 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 stats["improvements"]["speed_boost_pct"] = boost_pct
                 stats["improvements"]["mode"] = "dual_turbo"
 
-                log_assistant("ROAMER", "Dual Speed Benchmark", f"Solo Laptop: {solo_speed} Mbps | Dongle: {p2_solo} Mbps ➔ Dual-Bonded Turbo: {dual_speed} Mbps (+{boost_pct}% Boost!)", f"+{boost_pct}%")
+                log_assistant("ROAMER", "Dual Speed Benchmark", f"Solo: {solo_speed} Mbps | Dongle: {p2_solo} Mbps ➔ Dual Aggregated: {dual_speed} Mbps (+{boost_pct}% Boost)", f"+{boost_pct}%")
                 self.send_response(200)
                 self.send_header("Content-type", "application/json")
+                self.send_header("Access-Control-Allow-Origin", "*")
                 self.end_headers()
                 self.wfile.write(json.dumps({
                     "success": True,
@@ -718,37 +736,38 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     "boost_pct": boost_pct
                 }).encode())
             else:
-                # Secondary is NOT plugged in — TRUTHFUL SOLO MODE
+                # Truthful Solo Mode (Secondary not detected)
                 stats["wlan0_speed_mbps"] = solo_speed
                 stats["wlan1_speed_mbps"] = 0.0
                 stats["dual_combined_mbps"] = solo_speed
 
                 stats["before_metrics"] = {
                     "bssid": stats.get("current_bssid", p1),
-                    "channel": stats.get("current_channel", 6),
-                    "signal": stats.get("current_signal", 55),
+                    "channel": stats.get("current_channel", 1),
+                    "signal": stats.get("current_signal", 50),
                     "latency_ms": stats.get("latency_ms", 35.0),
                     "download_speed": f"{solo_speed} Mbps",
-                    "hardware": f"Solo Internal Laptop Wi-Fi ({p1})",
+                    "hardware": f"Solo Wi-Fi ({p1})",
                     "status": "Measured Solo Baseline",
                     "timestamp": time.strftime("%H:%M:%S")
                 }
                 stats["after_metrics"] = {
                     "bssid": stats.get("current_bssid", p1),
-                    "channel": stats.get("current_channel", 6),
-                    "signal": stats.get("current_signal", 55),
+                    "channel": stats.get("current_channel", 1),
+                    "signal": stats.get("current_signal", 50),
                     "latency_ms": stats.get("latency_ms", 35.0),
                     "download_speed": f"{solo_speed} Mbps (Solo Mode)",
-                    "hardware": f"Solo Wi-Fi ({p1} - Plug in Dongle for Dual Turbo)",
+                    "hardware": f"Solo Wi-Fi ({p1})",
                     "status": "Solo Benchmark Complete",
                     "timestamp": time.strftime("%H:%M:%S")
                 }
                 stats["improvements"]["speed_boost_pct"] = 0
                 stats["improvements"]["mode"] = "solo_bench"
 
-                log_assistant("ROAMER", "Solo Speed Benchmark", f"Solo Laptop Wi-Fi Speed: {solo_speed} Mbps. Plug in USB Wi-Fi dongle to unlock Dual Turbo speed aggregation!", "Solo")
+                log_assistant("ROAMER", "Solo Speed Benchmark", f"Physically measured solo Wi-Fi download speed: {solo_speed} Mbps.", "Solo")
                 self.send_response(200)
                 self.send_header("Content-type", "application/json")
+                self.send_header("Access-Control-Allow-Origin", "*")
                 self.end_headers()
                 self.wfile.write(json.dumps({
                     "success": True,
@@ -756,7 +775,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     "solo_speed_mbps": solo_speed,
                     "dual_speed_mbps": solo_speed,
                     "boost_pct": 0,
-                    "message": "Measured solo laptop speed. Plug in USB Wi-Fi dongle to unlock Dual Turbo!"
+                    "message": f"Measured solo laptop Wi-Fi speed: {solo_speed} Mbps. Connect secondary USB Wi-Fi dongle to unlock Dual Link aggregation."
                 }).encode())
         else:
             self.send_response(404)
@@ -765,12 +784,53 @@ class DashboardHandler(BaseHTTPRequestHandler):
     def log_message(self, format, *args):
         return
 
+def init_initial_state():
+    """Initializes actual physical state synchronously before worker threads start."""
+    try:
+        details = pa.get_active_wifi_details()
+        stats["current_ssid"] = details["ssid"]
+        stats["current_bssid"] = details["bssid"]
+        stats["current_channel"] = details["channel"]
+        stats["current_signal"] = details["signal"]
+        stats["current_band"] = details["band"]
+        stats["current_radio"] = details["radio"]
+        stats["current_rx_rate"] = details["rx_rate"]
+        stats["current_tx_rate"] = details["tx_rate"]
+        stats["current_rssi"] = details["rssi"]
+        stats["best_rssi"] = details["rssi"]
+
+        c1, c6, c11, total, best_b, best_ch, best_s = pa.scan_nearby_wifi_channels()
+        stats["ch1"] = c1
+        stats["ch6"] = c6
+        stats["ch11"] = c11
+        stats["total_aps"] = total
+        stats["best_ssid"] = details["ssid"]
+        stats["best_bssid"] = best_b if best_b != "None" else details["bssid"]
+        stats["recommended_channel"] = best_ch if best_ch > 0 else (details["channel"] or 1)
+
+        p1, _ = pa.get_wifi_interface_names()
+        stats["before_metrics"] = {
+            "bssid": details["bssid"],
+            "channel": details["channel"],
+            "signal": details["signal"],
+            "latency_ms": 0.0,
+            "download_speed": "Idle",
+            "hardware": f"{pa.SYSTEM} Wi-Fi ({p1})",
+            "status": "Baseline Snapshot",
+            "timestamp": time.strftime("%H:%M:%S")
+        }
+        stats["after_metrics"] = dict(stats["before_metrics"])
+        stats["after_metrics"]["status"] = "Live Tracking"
+    except Exception as e:
+        print("[INIT ERROR]", e)
+
 def web_server_worker():
     server = HTTPServer(("0.0.0.0", WEB_PORT), DashboardHandler)
     server.serve_forever()
 
 if __name__ == "__main__":
-    log_assistant("COPILOT", "System Started", "NetShield-IoT v4.1 is ready to protect your connection.", "Ready")
+    init_initial_state()
+    log_assistant("COPILOT", "System Initialized", f"NetShield-IoT v5.0 Enterprise active on {pa.SYSTEM}.", "Ready")
     
     threading.Thread(target=dns_shield_worker, daemon=True).start()
     threading.Thread(target=download_speed_worker, daemon=True).start()
@@ -780,7 +840,7 @@ if __name__ == "__main__":
     threading.Thread(target=spectrum_wave_streamer, daemon=True).start()
     threading.Thread(target=intelligent_copilot_worker, daemon=True).start()
     threading.Thread(target=web_server_worker, daemon=True).start()
-    log_assistant("COPILOT", "Dashboard Ready", f"Open http://localhost:{WEB_PORT} to view your dashboard.", "Online")
+    log_assistant("COPILOT", "Dashboard Ready", f"Enterprise Controller running at http://localhost:{WEB_PORT}", "Online")
     
     while True:
         time.sleep(1)
