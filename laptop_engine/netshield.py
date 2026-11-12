@@ -17,6 +17,7 @@ import os
 import glob
 import time
 import json
+import random
 import socket
 import threading
 import subprocess
@@ -54,11 +55,43 @@ BLOCKED_DOMAINS = [
 
 event_counter = 0
 
+# ---------------------------------------------------------------------------
+# Channel Utilization Waveform Generator
+# Before inserting ESP: low random wave (8% - 24%)
+# After inserting ESP: randomly high wave (68% - 96%)
+# ---------------------------------------------------------------------------
+_current_wave_val = 18.0
+
+def generate_channel_utilization_point(is_esp_connected: bool) -> float:
+    global _current_wave_val
+    if not is_esp_connected:
+        # Before inserting ESP: low random range (8% - 24%)
+        target = random.uniform(11.0, 22.0)
+        _current_wave_val += (target - _current_wave_val) * 0.35 + random.uniform(-2.5, 2.5)
+        _current_wave_val = max(8.0, min(24.0, _current_wave_val))
+    else:
+        # After inserting ESP: high random range (70% - 95%)
+        target = random.uniform(75.0, 93.0)
+        _current_wave_val += (target - _current_wave_val) * 0.40 + random.uniform(-5.0, 5.0)
+        _current_wave_val = max(68.0, min(96.0, _current_wave_val))
+    return round(_current_wave_val, 1)
+
+def get_initial_traffic_wave(is_esp_connected: bool):
+    global _current_wave_val
+    if is_esp_connected:
+        _current_wave_val = 82.0
+        return [round(random.uniform(70.0, 92.0), 1) for _ in range(20)]
+    else:
+        _current_wave_val = 16.0
+        return [round(random.uniform(10.0, 22.0), 1) for _ in range(20)]
+
+_initial_esp = bool(pa.auto_detect_esp32_port())
+
 stats = {
     # System & Hardware
-    "esp_connected": False,
-    "esp_port": "Disconnected",
-    "radar_source": f"{pa.SYSTEM} Wi-Fi (Software Fallback)",
+    "esp_connected": _initial_esp,
+    "esp_port": pa.auto_detect_esp32_port() or "Disconnected",
+    "radar_source": f"ESP32 Hardware Antenna ({pa.auto_detect_esp32_port()})" if _initial_esp else f"{pa.SYSTEM} Wi-Fi (Software Fallback)",
     "auto_roam_enabled": False,
     
     # 0-100 Master Internet Score
@@ -101,9 +134,9 @@ stats = {
     # Rolling Spectrum History (Only physically measured channel counts)
     "spectrum_history": [{"ch1": 0.0, "ch6": 0.0, "ch11": 0.0} for _ in range(25)],
     
-    # Physical Interface Traffic Buffer (True physical MB/s throughput points)
-    "traffic_wave": [0.0] * 20,
-    "traffic_zone": "Green (Clean Air 🏎️)",
+    # Channel Utilization Waveform Buffer (Low on Standby, High on ESP32 Hardware Sniffing)
+    "traffic_wave": get_initial_traffic_wave(_initial_esp),
+    "traffic_zone": "High RF Activity ⚡ (68–95%)" if _initial_esp else "Green (Clean Air 🏎️)",
     
     # Highway Traffic Analogy
     "highway": {
@@ -308,13 +341,19 @@ def download_speed_worker():
                 stats["download_speed_str"] = "0.00 Mbps"
                 stats["speed_verdict"] = "Idle / Standby"
                 
-            # Record physical delta point in traffic wave
-            stats["traffic_wave"].append(round(total_mbps, 2))
+            # Record dynamic channel utilization waveform point:
+            # Low random wave (8% - 24%) before inserting ESP
+            # Randomly high wave (68% - 96%) after inserting ESP
+            is_esp = bool(stats.get("esp_connected"))
+            wave_pt = generate_channel_utilization_point(is_esp)
+            stats["traffic_wave"].append(wave_pt)
             if len(stats["traffic_wave"]) > 20:
                 stats["traffic_wave"].pop(0)
 
-            # Update traffic zone based on measured channel congestion and latency
-            if stats["congestion_score"] >= 60 or stats["latency_ms"] > 150:
+            # Update traffic zone
+            if is_esp:
+                stats["traffic_zone"] = "High RF Activity ⚡ (68–95%)"
+            elif stats["congestion_score"] >= 60 or stats["latency_ms"] > 150:
                 stats["traffic_zone"] = "Red (Traffic Jam 🛑)"
             elif stats["congestion_score"] >= 30 or stats["latency_ms"] > 70:
                 stats["traffic_zone"] = "Yellow (Busy Air 🚗)"
@@ -414,13 +453,15 @@ def esp_listener_worker():
     Reads physical RF spectrum analytics from ESP32 hardware antenna.
     Falls back gracefully to OS native Wi-Fi scanner when ESP32 is unplugged.
     """
-    global stats
+    global stats, _current_wave_val
     while True:
         port = auto_detect_esp()
         if not port:
             stats["esp_connected"] = False
             stats["esp_port"] = "Disconnected"
             stats["radar_source"] = f"{pa.SYSTEM} Wi-Fi (Software Fallback)"
+            if _current_wave_val > 30.0:
+                _current_wave_val = random.uniform(12.0, 20.0)
             
             # Pure physical scan via host Wi-Fi adapter
             c1, c6, c11, total, _, _, _ = pa.scan_nearby_wifi_channels()
@@ -460,6 +501,8 @@ def esp_listener_worker():
             ser = serial.Serial(port, DEFAULT_BAUD, timeout=4)
             stats["esp_connected"] = True
             stats["radar_source"] = f"ESP32 Hardware Antenna ({port})"
+            if _current_wave_val < 60.0:
+                _current_wave_val = random.uniform(75.0, 88.0)
             log_assistant("RADAR", "ESP32 Antenna Connected", f"Hardware antenna sniffing 2.4 GHz airwaves on {port}.", "Online")
             
             while True:
@@ -498,6 +541,8 @@ def esp_listener_worker():
                         pass
         except Exception:
             stats["esp_connected"] = False
+            if _current_wave_val > 30.0:
+                _current_wave_val = random.uniform(12.0, 20.0)
             time.sleep(2.0)
 
 def spectrum_wave_streamer():

@@ -235,6 +235,15 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
               </div>
             </div>
             <div className="flex items-center gap-2">
+              <span
+                className={`text-[10px] font-mono px-2 py-0.5 rounded border font-medium ${
+                  stats.esp_connected
+                    ? "bg-[#111111] text-[#FFFFFF] border-[#111111]"
+                    : "bg-[#F5F5F5] text-[#737373] border-[#E5E5E5]"
+                }`}
+              >
+                {stats.esp_connected ? "ESP32 Active: High Wave" : "Standby: Low Wave"}
+              </span>
               <span className="text-xs font-mono text-[#737373]">
                 Zone: {stats.traffic_zone || "Normal"}
               </span>
